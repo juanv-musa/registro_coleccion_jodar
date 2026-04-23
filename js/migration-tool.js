@@ -87,7 +87,8 @@ function mapToSupabase(data, containerId) {
  * @param {Array} data 
  */
 async function uploadToSupabase(data) {
-    return await window.bulkImportPieces(data);
+    // Pasamos data como piezas y un array vacío [] como contenedores
+    return await window.bulkImportPieces(data, []);
 }
 
 // Global exposure
