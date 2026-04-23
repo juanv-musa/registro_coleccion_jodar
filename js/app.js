@@ -470,7 +470,10 @@ function setupEventListeners() {
                     <td class="text-xs">${p.dimensions}</td>
                 </tr>
             `).join('');
-        }, (err) => alert(err));
+        }, (err) => {
+            console.error(err);
+            alert("Error al procesar archivo: " + (err.message || err));
+        });
     });
 
     safeOnClick('btn-confirm-import', () => {
@@ -478,7 +481,10 @@ function setupEventListeners() {
         uploadToSupabase(state.tempImportData).then(() => {
             alert("¡Importado con éxito!");
             showView('inventory');
-        }).catch(err => alert(err));
+        }).catch(err => {
+            console.error(err);
+            alert("Error al subir a Supabase: " + (err.message || JSON.stringify(err)));
+        });
     });
 
     // Movement
@@ -500,7 +506,10 @@ function setupEventListeners() {
             await movePieceToContainer(state.currentPiece.id, state.targetContainer.id, state.currentUser.pin);
             document.getElementById('move-modal').style.display = 'none';
             showPieceDetail(state.currentPiece.id); 
-        } catch (err) { alert(err); }
+        } catch (err) { 
+            console.error(err);
+            alert("Error en el movimiento: " + (err.message || JSON.stringify(err))); 
+        }
     });
 
     safeOnClick('btn-cancel-move', () => {
