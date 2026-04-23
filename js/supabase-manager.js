@@ -89,11 +89,15 @@ async function getAllContainers() {
 // --- IMPORTACIÓN ---
 async function bulkImportPieces(pieces, containers) {
     if (!dbClient) throw new Error("No hay conexión con la base de datos");
-    if (containers.length > 0) {
+    
+    // 1. Importar Contenedores (si existen)
+    if (containers && containers.length > 0) {
         const { error: cErr } = await dbClient.from('containers').upsert(containers);
         if (cErr) throw cErr;
     }
-    if (pieces.length > 0) {
+
+    // 2. Importar Piezas (si existen)
+    if (pieces && pieces.length > 0) {
         const { error: pErr } = await dbClient.from('pieces').upsert(pieces);
         if (pErr) throw pErr;
     }
