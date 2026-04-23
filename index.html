@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Musaraña | Gestión de Reserva Arqueológica</title>
 
     <!-- Fonts -->
@@ -53,6 +53,10 @@
                     <li><button class="nav-btn" data-view="inventory">
                         <i data-lucide="archive"></i>
                         <span>Inventario</span>
+                    </button></li>
+                    <li><button class="nav-btn" data-view="locations">
+                        <i data-lucide="layers"></i>
+                        <span>Ubicaciones</span>
                     </button></li>
                     <li><button class="nav-btn" data-view="scanner">
                         <i data-lucide="scan-line"></i>
@@ -154,7 +158,19 @@
                     </div>
                 </section>
 
-                <!-- Scanner View -->
+                <!-- Locations / Containers View -->
+                <section id="view-locations" class="view" style="display: none;">
+                    <div class="view-header">
+                        <h2>Árbol de Ubicaciones</h2>
+                        <button class="btn-primary" onclick="showAddContainerModal()">
+                            <i data-lucide="plus"></i> Nueva Ubicación
+                        </button>
+                    </div>
+                    
+                    <div class="locations-grid" id="locations-list">
+                        <!-- Se llena con JS -->
+                    </div>
+                </section>
                 <section id="view-scanner" class="view" style="display: none;">
                     <div class="scanner-container glass">
                         <div id="qr-reader"></div>

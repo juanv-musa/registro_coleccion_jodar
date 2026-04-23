@@ -59,13 +59,13 @@ function mapToSupabase(data, containerId) {
         
         return {
             id: pieceId,
-            inventory_number_new: row['NUMERACIÓN'] || pieceId,
-            inventory_number_old: row['NIM'] || null,
-            name: row['TÍTULO'] || row['OBJETO'] || 'Sin nombre',
+            inventory_number_new: (row['NUMERACIÓN'] || row['Nº INV'] || pieceId).toString().trim(),
+            inventory_number_old: (row['NIM'] || row['Nº ANTERIOR'] || null),
+            name: (row['TÍTULO'] || row['OBJETO'] || row['DENOMINACIÓN'] || row['PIEZA'] || 'Sin nombre').toString().trim(),
             section: row['SECCIÓN'] || null,
             subsection: row['SUBSECCIÓN'] || null,
-            material: row['MATERIA'] || row['TÉCNICA'] || 'Desconocido',
-            chronology: row['EPOCA'] || row['DATACIÓN'] || 'Desconocida',
+            material: row['MATERIA'] || row['TÉCNICA'] || row['MATERIAL'] || 'Desconocido',
+            chronology: row['EPOCA'] || row['DATACIÓN'] || row['CRONOLOGÍA'] || 'Desconocida',
             author: row['AUTOR'] || null,
             provenance: row['PROCEDENCIA '] || row['PROCEDENCIA'] || null,
             description: row['DESCRIPCIÓN '] || row['DESCRIPCIÓN'] || null,
@@ -77,10 +77,10 @@ function mapToSupabase(data, containerId) {
             cataloging_date: row['FECHA DE CATALOGACIÓN'] || null,
             container_id: containerId || null,
             image_url: (() => {
-                const foto = row['FOTO'] || row['foto'] || row['Foto'];
+                const foto = row['FOTO'] || row['foto'] || row['Foto'] || row['IMAGEN'];
                 if (!foto) return row['NIM'] ? `img/${row['NIM']}.jpg` : null;
-                // Si ya tiene la ruta 'img/', la dejamos. Si no, se la añadimos.
-                return foto.startsWith('img/') ? foto : `img/${foto}`;
+                const cleanFoto = foto.toString().trim();
+                return cleanFoto.startsWith('img/') ? cleanFoto : `img/${cleanFoto}`;
             })(),
             updated_at: new Date()
         };

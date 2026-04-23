@@ -92,3 +92,37 @@ window.getPieceById = async function(id) {
     const { data } = await dbClient.from('pieces').select('*, containers(*)').eq('id', id).single();
     return data;
 };
+
+// --- MOVIMIENTOS Y UBICACIONES ---
+window.updatePieceLocation = async function(pieceId, containerId, operatorId) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    
+    // 1. Obtener ubicación actual para el historial
+    const { data: piece } = await dbClient.from('pieces').select('container_id').eq('id', pieceId).single();
+    const originId = piece ? piece.container_id : null;
+
+    // 2. Actualizar la pieza
+    const { error: pErr } = await dbClient.from('pieces')
+        .update({ container_id: containerId, updated_at: new Date() })
+        .eq('id', pieceId);
+    if (pErr) throw pErr;
+
+    // 3. Registrar el movimiento en el historial
+    const { error: mErr } = await dbClient.from('movements').insert({
+        piece_id: pieceId,
+        origin_container_id: originId,
+        destination_container_id: containerId,
+        operator_id: operatorId,
+        timestamp: new Date()
+    });
+    if (mErr) throw mErr;
+
+    return true;
+};
+
+window.createContainer = async function(containerData) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    const { data, error } = await dbClient.from('containers').upsert(containerData);
+    if (error) throw error;
+    return data;
+};

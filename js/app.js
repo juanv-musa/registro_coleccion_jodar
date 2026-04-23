@@ -508,3 +508,51 @@ function setupEventListeners() {
         btn.onclick = () => showView('dashboard');
     });
 }
+
+// --- LOCATIONS & CONTAINERS ---
+async function loadLocations() {
+    if (typeof dbClient === 'undefined' || !dbClient) return;
+    try {
+        const containers = await getAllContainers();
+        renderLocationsGrid(containers);
+    } catch (err) {
+        console.error("Error cargando ubicaciones:", err);
+    }
+}
+
+function renderLocationsGrid(containers) {
+    const list = document.getElementById('locations-list');
+    if (!list) return;
+
+    if (!containers || containers.length === 0) {
+        list.innerHTML = '<p class="empty-state">No hay ubicaciones creadas. Pulsa "Nueva Ubicación" para empezar.</p>';
+        return;
+    }
+
+    list.innerHTML = containers.map(c => `
+        <div class="location-card glass">
+            <div class="location-info">
+                <h3>${c.id}</h3>
+                <p>${c.sala || ''} > ${c.modulo || ''} > ${c.estanteria || ''}</p>
+                <small>Caja: ${c.caja || '-'}</small>
+            </div>
+            <div class="location-actions">
+                <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}')">
+                    <i data-lucide="qr-code"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    if (window.lucide) window.lucide.createIcons();
+}
+
+// Global exposure
+window.loadLocations = loadLocations;
+
+// Modificar showView para incluir la nueva vista
+const originalShowView = window.showView;
+window.showView = (viewId, loadData = true) => {
+    if (originalShowView) originalShowView(viewId, loadData);
+    if (viewId === 'locations') loadLocations();
+};
