@@ -13,35 +13,34 @@ window.verifyOperatorPIN = verifyOperatorPIN;
 window.getContainerById = getContainerById;
 window.getAllContainers = getAllContainers;
 
-// Inicialización segura con diagnóstico
+// Inicialización segura con reintentos
 function initSupabase() {
-    // Detectar librería en cualquier formato
-    const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+    const intentarConexion = () => {
+        const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
 
-    if (!supabaseLib) {
-        alert("CRÍTICO: La librería de Supabase no se cargó. Intenta refrescar con Ctrl+F5.");
-        return null;
-    }
-    
-    const { createClient } = supabaseLib;
+        if (supabaseLib) {
+            const { createClient } = supabaseLib;
+            if (window.SUPABASE_CONFIG && !window.SUPABASE_CONFIG.url.includes("TU_SUPABASE_URL")) {
+                supabase = createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+                console.log("Conexión con Supabase reestablecida.");
+                return true;
+            }
+        }
+        return false;
+    };
 
-    if (!window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.url.includes("TU_SUPABASE_URL")) {
-        alert("ERROR DE CONFIGURACIÓN: Aún tienes la URL de ejemplo en js/supabase-config.js. Cámbiala por la de tu proyecto.");
-        return null;
-    }
-
-    if (window.SUPABASE_CONFIG.anonKey.length < 50) {
-        alert("ERROR DE CLAVE: La anonKey parece incorrecta (es demasiado corta). Asegúrate de usar la clave 'Legacy' que empieza por 'eyJ'.");
-        return null;
-    }
-
-    try {
-        supabase = createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
-        console.log("Conexión con Supabase establecida con éxito.");
-        return supabase;
-    } catch (err) {
-        alert("ERROR AL CONECTAR: " + err.message);
-        return null;
+    if (!intentarConexion()) {
+        // Si no conecta al principio, reintentar cada 500ms durante 5 segundos
+        let reintentos = 0;
+        const intervalo = setInterval(() => {
+            reintentos++;
+            if (intentarConexion() || reintentos > 10) {
+                clearInterval(intervalo);
+                if (reintentos > 10) {
+                    alert("CRÍTICO: No se pudo establecer conexión con Supabase tras 5 segundos.");
+                }
+            }
+        }, 500);
     }
 }
 
