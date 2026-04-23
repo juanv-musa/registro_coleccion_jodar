@@ -18,7 +18,13 @@
     <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="js/supabase-lib.js"></script>
+    <script src="./js/supabase-lib.js"></script>
+    <script>
+        console.log("Estado de carga de librerías:");
+        setTimeout(() => {
+            console.log("Supabase en window:", !!window.supabase);
+        }, 1000);
+    </script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
