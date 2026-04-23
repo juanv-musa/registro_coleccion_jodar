@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musaraña | Gestión de Reserva Arqueológica</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons: Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Libraries -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Background Decoration -->
+    <div class="bg-decoration">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass">
+            <div class="logo-area">
+                <img src="assets/logo.png" alt="Musaraña" class="logo-img">
+                <span class="brand-text">Musaraña<span>Gestión</span></span>
+            </div>
+            <nav id="nav">
+                <ul>
+                    <li><button class="nav-btn active" data-view="dashboard">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Dashboard</span>
+                    </button></li>
+                    <li><button class="nav-btn" data-view="inventory">
+                        <i data-lucide="archive"></i>
+                        <span>Inventario</span>
+                    </button></li>
+                    <li><button class="nav-btn" data-view="scanner">
+                        <i data-lucide="scan-line"></i>
+                        <span>Escanear QR</span>
+                    </button></li>
+                    <li><button class="nav-btn" data-view="admin">
+                        <i data-lucide="database-zap"></i>
+                        <span>Importar</span>
+                    </button></li>
+                </ul>
+            </nav>
+            <div class="user-status glass">
+                <div class="user-avatar" id="current-user-avatar">?</div>
+                <div class="user-info">
+                    <p class="user-name" id="current-user-name">Operario</p>
+                    <p class="user-role">Acceso Autorizado</p>
+                </div>
+                <button id="btn-logout" title="Salir"><i data-lucide="log-out"></i></button>
+            </div>
+            <div class="sidebar-footer">
+                <p>Musaraña 2026</p>
+                <span class="version-tag">v2.1.0</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <header class="top-header">
+                <h1 id="view-title">Dashboard</h1>
+                <div class="header-actions">
+                    <button id="btn-sync" class="btn-icon"><i data-lucide="refresh-cw"></i></button>
+                    <div id="connection-status" class="status-badge connected">Supabase Online</div>
+                </div>
+            </header>
+
+            <!-- Views Container -->
+            <div id="view-container">
+                <!-- Dashboard View -->
+                <section id="view-dashboard" class="view">
+                    <div class="stats-grid">
+                        <div class="stat-card glass">
+                            <span class="stat-label">Total Piezas</span>
+                            <span class="stat-value" id="stats-total">0</span>
+                            <i data-lucide="gem"></i>
+                        </div>
+                        <div class="stat-card glass gold">
+                            <span class="stat-label">Movimientos Hoy</span>
+                            <span class="stat-value" id="stats-today">0</span>
+                            <i data-lucide="package-search"></i>
+                        </div>
+                        <div class="stat-card glass">
+                            <span class="stat-label">Sala más activa</span>
+                            <span class="stat-value" id="stats-active-room">-</span>
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-panels">
+                        <div class="panel glass">
+                            <h3>Últimos Movimientos</h3>
+                            <div id="recent-movements-list" class="log-list">
+                                <p class="empty-state">No hay registros recientes</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Inventory View -->
+                <section id="view-inventory" class="view" style="display: none;">
+                    <div class="search-bar glass">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="inventory-search" placeholder="Busca por nombre, nº inventario o ubicación...">
+                    </div>
+                    <div class="inventory-table-container glass">
+                        <table id="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Nº Inv</th>
+                                    <th>Nombre</th>
+                                    <th>Ubicación</th>
+                                    <th>Material</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Scanner View -->
+                <section id="view-scanner" class="view" style="display: none;">
+                    <div class="scanner-container glass">
+                        <div id="qr-reader"></div>
+                        <div class="scanner-status" id="scanner-mode-text">Modo: Identificación</div>
+                        <div class="scanner-instructions">
+                            <i data-lucide="info"></i>
+                            <p id="scanner-tip">Escanea una PIEZA para ver info o un CONTENEDOR para ver su contenido.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Piece Detail View -->
+                <section id="view-detail" class="view" style="display: none;">
+                    <div class="detail-header">
+                        <button id="btn-back-to-inventory" class="btn-text"><i data-lucide="chevron-left"></i> Volver</button>
+                    </div>
+                    <div class="detail-grid">
+                    <div class="detail-main glass">
+                        <div class="piece-image-header" id="detail-image-container" style="display: none;">
+                            <img src="" alt="Foto de la pieza" id="detail-image" class="piece-detail-img">
+                        </div>
+                        <div class="piece-title-area">
+                                <h2 id="detail-name">Nombre de la Pieza</h2>
+                                <span class="badge" id="detail-inv-new">P-XXX</span>
+                            </div>
+                            <div class="tags">
+                                <span class="tag" id="detail-material">Material</span>
+                                <span class="tag gold" id="detail-chronology">Cronología</span>
+                            </div>
+                            
+                            <div class="location-box glass">
+                                <h3>Contenedor Actual</h3>
+                                <div class="path" id="detail-container-name">CAJA NOMBRE</div>
+                                <div class="sub-path" id="detail-full-path">SALA > MODULO > ESTANTERIA</div>
+                                <button id="btn-start-move" class="btn-gold">Trasladar Pieza <i data-lucide="move"></i></button>
+                            </div>
+
+                            <div class="technical-details glass mt-2">
+                                <h3>Ficha Técnica</h3>
+                                <div class="tech-grid">
+                                    <div class="tech-item"><span>Dimensiones:</span> <strong id="detail-dimensions">-</strong></div>
+                                    <div class="tech-item"><span>Procedencia:</span> <strong id="detail-provenance">-</strong></div>
+                                    <div class="tech-item"><span>Autor:</span> <strong id="detail-author">-</strong></div>
+                                    <div class="tech-item"><span>Sección:</span> <strong id="detail-section">-</strong></div>
+                                </div>
+                                <div class="mt-2">
+                                    <span>Descripción:</span>
+                                    <p id="detail-description" class="text-sm mt-1">-</p>
+                                </div>
+                                <div class="mt-1">
+                                    <span>Observaciones:</span>
+                                    <p id="detail-observations" class="text-sm italic mt-1">-</p>
+                                </div>
+                            </div>
+
+                            <div class="history-area mt-2">
+                                <h3>Historial de Movimientos</h3>
+                                <div id="detail-history" class="history-list"></div>
+                            </div>
+                        </div>
+                        <div class="detail-side glass">
+                            <h3>QR de la Pieza</h3>
+                            <div id="piece-qr-display" class="qr-container"></div>
+                            <button id="btn-print-qr" class="btn-outline">Imprimir QR Pieza <i data-lucide="printer"></i></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Container Detail View -->
+                <section id="view-container-detail" class="view" style="display: none;">
+                    <div class="detail-header">
+                        <button class="btn-text btn-back-dashboard"><i data-lucide="chevron-left"></i> Volver</button>
+                    </div>
+                    <div class="container-detail-grid">
+                        <div class="glass p-2">
+                            <h2 id="cont-detail-name">Nombre del Contenedor</h2>
+                            <p id="cont-detail-path" class="text-muted">SALA > MODULO > ...</p>
+                            <div class="cont-stats">
+                                <span class="badge" id="cont-piece-count">0 Piezas dentro</span>
+                            </div>
+                            <div class="inner-pieces-list" id="cont-pieces-list">
+                                <!-- List of pieces inside -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Admin View -->
+                <section id="view-admin" class="view" style="display: none;">
+                    <div class="import-card glass">
+                        <i data-lucide="upload-cloud"></i>
+                        <h2>Importación de Datos</h2>
+                        <p>1. Selecciona el destino de las piezas:</p>
+                        
+                        <div class="destination-selector mb-2">
+                            <select id="import-destination-select" class="glass-input">
+                                <option value="">-- Sin ubicación (Solo registrar) --</option>
+                                <optgroup label="Almacén" id="opt-almacen"></optgroup>
+                                <optgroup label="Sala Expositiva" id="opt-sala"></optgroup>
+                            </select>
+                        </div>
+
+                        <p>2. Sube tu archivo (.csv, .xlsx):</p>
+                        <input type="file" id="csv-input" accept=".csv, .xlsx, .xls" style="display: none;">
+                        <button onclick="document.getElementById('csv-input').click()" class="btn-gold">Seleccionar Archivo</button>
+                        
+                        <div id="import-preview-status" class="mt-2 text-sm"></div>
+                        
+                        <div id="import-preview-container" class="preview-table-container glass mt-2" style="display: none;">
+                            <div class="preview-header">
+                                <h3>Vista Previa (Primeras 5 piezas)</h3>
+                                <button id="btn-confirm-import" class="btn-gold">Confirmar Subida <i data-lucide="check-circle"></i></button>
+                            </div>
+                            <table class="preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>NUMERACIÓN</th>
+                                        <th>TÍTULO</th>
+                                        <th>PROCEDENCIA</th>
+                                        <th>DIMENSIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="import-preview-body"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="import-preview" class="preview-area"></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- PIN Access Overlay -->
+    <div id="pin-overlay" class="overlay">
+        <div class="pin-card glass">
+            <img src="assets/logo.png" alt="Logo" class="pin-logo">
+            <h2>Acceso Autorizado</h2>
+            <p>Introduce tu PIN para identificarte</p>
+            <div class="pin-display">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <div class="pin-numpad">
+                <button class="num">1</button><button class="num">2</button><button class="num">3</button>
+                <button class="num">4</button><button class="num">5</button><button class="num">6</button>
+                <button class="num">7</button><button class="num">8</button><button class="num">9</button>
+                <button class="clear"><i data-lucide="delete"></i></button><button class="num">0</button><button class="enter"><i data-lucide="arrow-right"></i></button>
+            </div>
+            <p id="pin-error" class="error-text" style="display: none;">PIN incorrecto. Inténtalo de nuevo.</p>
+        </div>
+    </div>
+
+    <!-- Move Piece Modal -->
+    <div id="move-modal" class="modal-overlay" style="display: none;">
+        <div class="modal glass">
+            <h2>Trasladar Pieza</h2>
+            <p id="move-piece-info" class="mb-2">Moviendo P-XXX</p>
+            
+            <div class="move-step-1" id="move-step-scan">
+                <div class="scanner-mini-placeholder glass mb-2">
+                    <i data-lucide="scan-face" size="48"></i>
+                    <p>Escanea el QR del CONTENEDOR de destino</p>
+                </div>
+                <button id="btn-open-move-scanner" class="btn-gold w-100">Abrir Escáner <i data-lucide="camera"></i></button>
+            </div>
+
+            <div class="move-step-2" id="move-step-confirm" style="display: none;">
+                <p>Destino detectado:</p>
+                <div class="dest-preview glass">
+                    <strong id="dest-name">Caja de Madera 42</strong>
+                    <p id="dest-path">SALA A > MODULO B</p>
+                </div>
+                <div class="modal-actions mt-2">
+                    <button id="btn-confirm-move" class="btn-gold">Confirmar Movimiento</button>
+                </div>
+            </div>
+            
+            <div class="modal-actions mt-1">
+                <button id="btn-cancel-move" class="btn-text">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-manager.js"></script>
+    <script src="js/qr-service.js"></script>
+    <script src="js/migration-tool.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
