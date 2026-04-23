@@ -1,119 +1,94 @@
 /**
- * GESTOR DE SUPABASE (Versión 4.0 - Sin conflictos de nombres)
+ * GESTOR DE SUPABASE (Versión 5.0 - Blindaje Total)
  */
 
-// Usamos un nombre que no choque con la librería (que ya usa 'supabase')
 var dbClient = null;
 
-// Exponer funciones globales
-window.initSupabase = initSupabase;
-
-// --- INICIALIZACIÓN ---
-
-function initSupabase() {
-    const intentarConectar = () => {
-        // La librería se llama 'supabase' o 'window.supabase'
+// Inicialización
+window.initSupabase = function() {
+    const intentar = () => {
         const lib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
         const config = window.SUPABASE_CONFIG;
 
         if (lib && config && config.url && !config.url.includes("TU_SUPABASE_URL")) {
             try {
-                const { createClient } = lib;
-                // Guardamos la conexión en dbClient para no chocar
-                dbClient = createClient(config.url, config.anonKey);
-                console.log("✅ Supabase conectado (dbClient listo).");
+                dbClient = lib.createClient(config.url, config.anonKey);
+                console.log("✅ Conectado a Supabase.");
                 return true;
-            } catch (err) {
-                console.error("❌ Error de cliente:", err);
-            }
+            } catch (err) { console.error(err); }
         }
         return false;
     };
 
-    if (!intentarConectar()) {
-        let reintentos = 0;
-        const interval = setInterval(() => {
-            reintentos++;
-            if (intentarConectar() || reintentos > 20) {
-                clearInterval(interval);
-            }
+    if (!intentar()) {
+        let r = 0;
+        const i = setInterval(() => {
+            r++;
+            if (intentar() || r > 20) clearInterval(i);
         }, 500);
     }
-}
+};
 
-// --- OPERARIOS ---
-async function verifyOperatorPIN(pin) {
-    if (!dbClient) return null;
-    const { data, error } = await dbClient.from('operators').select('*').eq('pin', pin).eq('active', true).single();
-    return error ? null : data;
-}
+// --- FUNCIONES DE DATOS ---
 
-// --- DASHBOARD ---
-async function getDashboardStats() {
+window.getDashboardStats = async function() {
     if (!dbClient) return { totalPieces: 0, totalContainers: 0, movementsToday: 0 };
     try {
         const { count: p } = await dbClient.from('pieces').select('*', { count: 'exact', head: true });
         const { count: c } = await dbClient.from('containers').select('*', { count: 'exact', head: true });
         return { totalPieces: p || 0, totalContainers: c || 0, movementsToday: 0 };
     } catch (e) { return { totalPieces: 0, totalContainers: 0, movementsToday: 0 }; }
-}
+};
 
-async function getRecentMovements() {
+window.getRecentMovements = async function() {
     if (!dbClient) return [];
     try {
         const { data } = await dbClient.from('movements').select('*, pieces(name)').order('timestamp', { ascending: false }).limit(5);
         return data || [];
     } catch (e) { return []; }
-}
+};
 
-// --- PIEZAS ---
-async function getAllPieces() {
+window.getAllPieces = async function() {
     if (!dbClient) return [];
     const { data } = await dbClient.from('pieces').select('*, containers(*)');
     return data || [];
-}
+};
 
-async function getPieceById(id) {
-    if (!dbClient) return null;
-    const { data } = await dbClient.from('pieces').select('*, containers(*)').eq('id', id).single();
-    return data;
-}
-
-// --- CONTENEDORES ---
-async function getAllContainers() {
+window.getAllContainers = async function() {
     if (!dbClient) return [];
     const { data } = await dbClient.from('containers').select('*');
     return data || [];
-}
+};
 
-// --- IMPORTACIÓN ---
-async function bulkImportPieces(pieces, containers) {
-    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+// --- IMPORTACIÓN (La función que daba error de length) ---
+window.bulkImportPieces = async function(pieces, containers) {
+    console.log("Iniciando importación...", { piezas: pieces?.length, cajas: containers?.length });
     
-    // 1. Importar Contenedores (si existen)
-    if (containers && containers.length > 0) {
-        const { error: cErr } = await dbClient.from('containers').upsert(containers);
-        if (cErr) throw cErr;
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+
+    // 1. Contenedores (Solo si es un array con datos)
+    if (Array.isArray(containers) && containers.length > 0) {
+        const { error } = await dbClient.from('containers').upsert(containers);
+        if (error) throw error;
     }
 
-    // 2. Importar Piezas (si existen)
-    if (pieces && pieces.length > 0) {
-        const { error: pErr } = await dbClient.from('pieces').upsert(pieces);
-        if (pErr) throw pErr;
+    // 2. Piezas (Solo si es un array con datos)
+    if (Array.isArray(pieces) && pieces.length > 0) {
+        const { error } = await dbClient.from('pieces').upsert(pieces);
+        if (error) throw error;
     }
+
     return true;
-}
+};
 
-// --- EXPOSICIÓN GLOBAL ---
-window.verifyOperatorPIN = verifyOperatorPIN;
-window.getDashboardStats = getDashboardStats;
-window.getRecentMovements = getRecentMovements;
-window.getAllPieces = getAllPieces;
-window.getPieceById = getPieceById;
-window.getAllContainers = getAllContainers;
-window.bulkImportPieces = bulkImportPieces;
-window.getContainerById = async (id) => {
+window.verifyOperatorPIN = async function(pin) {
     if (!dbClient) return null;
-    const { data } = await dbClient.from('containers').select('*').eq('id', id).single();
+    const { data, error } = await dbClient.from('operators').select('*').eq('pin', pin).eq('active', true).single();
+    return error ? null : data;
+};
+
+window.getPieceById = async function(id) {
+    if (!dbClient) return null;
+    const { data } = await dbClient.from('pieces').select('*, containers(*)').eq('id', id).single();
     return data;
 };
