@@ -61,7 +61,7 @@ function mapToSupabase(data, containerId) {
             id: pieceId,
             inventory_number_new: (row['NUMERACIÓN'] || row['Nº INV'] || pieceId).toString().trim(),
             inventory_number_old: (row['NIM'] || row['Nº ANTERIOR'] || null),
-            name: (row['TÍTULO'] || row['OBJETO'] || row['DENOMINACIÓN'] || row['PIEZA'] || 'Sin nombre').toString().trim(),
+            name: (row['TÍTULO'] || row['OBJETO'] || row['objeto'] || row['DENOMINACIÓN'] || row['PIEZA'] || 'Sin nombre').toString().trim(),
             section: row['SECCIÓN'] || null,
             subsection: row['SUBSECCIÓN'] || null,
             material: row['MATERIA'] || row['TÉCNICA'] || row['MATERIAL'] || 'Desconocido',

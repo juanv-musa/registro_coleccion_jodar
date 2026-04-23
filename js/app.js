@@ -278,10 +278,13 @@ function sortInventory(col) {
     }
 
     const sorted = [...state.allPieces].sort((a, b) => {
-        let valA = (a[col] || '').toString().toLowerCase();
-        let valB = (b[col] || '').toString().toLowerCase();
-        if (currentSort.asc) return valA.localeCompare(valB);
-        return valB.localeCompare(valA);
+        let valA = (a[col] || '').toString();
+        let valB = (b[col] || '').toString();
+        
+        // Usar numeric: true para que "2" venga antes que "10"
+        return currentSort.asc 
+            ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
+            : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
     });
 
     renderInventoryTable(sorted);
@@ -507,9 +510,45 @@ function setupEventListeners() {
     document.querySelectorAll('.btn-back-dashboard').forEach(btn => {
         btn.onclick = () => showView('dashboard');
     });
+
+    // Formulario de nueva ubicación
+    safeListener('form-add-container', 'submit', handleAddContainer);
 }
 
 // --- LOCATIONS & CONTAINERS ---
+window.showAddContainerModal = function() {
+    document.getElementById('add-container-modal').style.display = 'flex';
+};
+
+window.closeAddContainerModal = function() {
+    document.getElementById('add-container-modal').style.display = 'none';
+    document.getElementById('form-add-container').reset();
+};
+
+async function handleAddContainer(e) {
+    e.preventDefault();
+    
+    const containerData = {
+        id: `C-${Date.now()}`,
+        name: document.getElementById('new-cont-name').value,
+        sala: document.getElementById('new-cont-sala').value,
+        modulo: document.getElementById('new-cont-modulo').value || null,
+        estanteria: document.getElementById('new-cont-estanteria').value || null,
+        balda: document.getElementById('new-cont-balda').value || null,
+        caja: document.getElementById('new-cont-caja').value || null,
+        updated_at: new Date()
+    };
+
+    try {
+        await createContainer(containerData);
+        alert("Ubicación creada con éxito");
+        closeAddContainerModal();
+        loadLocations(); // Recargar la lista
+    } catch (err) {
+        alert("Error al crear ubicación: " + err.message);
+    }
+}
+
 async function loadLocations() {
     if (typeof dbClient === 'undefined' || !dbClient) return;
     try {
