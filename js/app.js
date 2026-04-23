@@ -472,7 +472,8 @@ function setupEventListeners() {
             `).join('');
         }, (err) => {
             console.error(err);
-            alert("Error al procesar archivo: " + (err.message || err));
+            const msg = err && typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err);
+            alert("Error al procesar archivo: " + msg);
         });
     });
 
@@ -483,7 +484,8 @@ function setupEventListeners() {
             showView('inventory');
         }).catch(err => {
             console.error(err);
-            alert("Error al subir a Supabase: " + (err.message || JSON.stringify(err)));
+            const msg = err && typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err);
+            alert("Error al subir a Supabase: " + msg);
         });
     });
 
@@ -508,7 +510,8 @@ function setupEventListeners() {
             showPieceDetail(state.currentPiece.id); 
         } catch (err) { 
             console.error(err);
-            alert("Error en el movimiento: " + (err.message || JSON.stringify(err))); 
+            const msg = err && typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err);
+            alert("Error en el movimiento: " + msg); 
         }
     });
 
@@ -554,7 +557,9 @@ async function handleAddContainer(e) {
         closeAddContainerModal();
         loadLocations(); // Recargar la lista
     } catch (err) {
-        alert("Error al crear ubicación: " + err.message);
+        console.error(err);
+        const msg = err && typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err);
+        alert("Error al crear ubicación: " + msg);
     }
 }
 

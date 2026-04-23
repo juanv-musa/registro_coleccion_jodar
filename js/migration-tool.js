@@ -54,31 +54,46 @@ function parseExcelInventory(file, containerId, onComplete, onError) {
  */
 function mapToSupabase(data, containerId) {
     return data.map((row, index) => {
-        const rawId = row['NUMERACIÓN'] || row['NIM'] || `TEMP-${Date.now()}-${index}`;
+        // Función auxiliar para buscar campos de forma insensible a mayúsculas
+        const getVal = (names) => {
+            for (let name of names) {
+                // Caso exacto
+                if (row[name] !== undefined && row[name] !== null) return row[name];
+                // Caso insensible
+                const key = Object.keys(row).find(k => k.toLowerCase().trim() === name.toLowerCase().trim());
+                if (key && row[key] !== undefined && row[key] !== null) return row[key];
+            }
+            return null;
+        };
+
+        const rawId = getVal(['NUMERACIÓN', 'NIM', 'Nº INV']) || `TEMP-${Date.now()}-${index}`;
         const pieceId = rawId.toString().startsWith('P-') ? rawId : `P-${rawId}`;
         
         return {
             id: pieceId,
-            inventory_number_new: (row['NUMERACIÓN'] || row['Nº INV'] || pieceId).toString().trim(),
-            inventory_number_old: (row['NIM'] || row['Nº ANTERIOR'] || null),
-            name: (row['TÍTULO'] || row['OBJETO'] || row['objeto'] || row['DENOMINACIÓN'] || row['PIEZA'] || 'Sin nombre').toString().trim(),
-            section: row['SECCIÓN'] || null,
-            subsection: row['SUBSECCIÓN'] || null,
-            material: row['MATERIA'] || row['TÉCNICA'] || row['MATERIAL'] || 'Desconocido',
-            chronology: row['EPOCA'] || row['DATACIÓN'] || row['CRONOLOGÍA'] || 'Desconocida',
-            author: row['AUTOR'] || null,
-            provenance: row['PROCEDENCIA '] || row['PROCEDENCIA'] || null,
-            description: row['DESCRIPCIÓN '] || row['DESCRIPCIÓN'] || null,
-            observations: row['OBSERVACIONES '] || row['OBSERVACIONES'] || null,
-            dimensions: `${row['Alto '] || row['Alto'] || '0'} x ${row['Ancho'] || '0'} x ${row['Profundidad '] || row['Profundidad'] || '0'} cm`,
-            other_measurements: row['Otra medida'] || null,
-            conservation: row['CONSERVACIÓN'] || null,
-            cataloger: row['CATALOGADORA/DOR'] || null,
-            cataloging_date: row['FECHA DE CATALOGACIÓN'] || null,
+            inventory_number_new: (getVal(['NUMERACIÓN', 'Nº INV']) || pieceId).toString().trim(),
+            inventory_number_old: getVal(['NIM', 'Nº ANTERIOR', 'NIM/Nº INV. ANTERIOR']),
+            name: (getVal(['TÍTULO', 'OBJETO', 'DENOMINACIÓN', 'PIEZA']) || 'Sin nombre').toString().trim(),
+            section: getVal(['SECCIÓN']) || null,
+            subsection: getVal(['SUBSECCIÓN']) || null,
+            material: getVal(['MATERIA', 'TÉCNICA', 'MATERIAL']) || 'Desconocido',
+            chronology: getVal(['EPOCA', 'DATACIÓN', 'CRONOLOGÍA']) || 'Desconocida',
+            author: getVal(['AUTOR']) || null,
+            provenance: getVal(['PROCEDENCIA', 'PROCEDENCIA ']) || null,
+            description: getVal(['DESCRIPCIÓN', 'DESCRIPCIÓN ']) || null,
+            observations: getVal(['OBSERVACIONES', 'OBSERVACIONES ']) || null,
+            dimensions: `${getVal(['Alto', 'Alto ']) || '0'} x ${getVal(['Ancho', 'Ancho ']) || '0'} x ${getVal(['Profundidad', 'Profundidad ']) || '0'} cm`,
+            other_measurements: getVal(['Otra medida', 'Otras medidas']) || null,
+            conservation: getVal(['CONSERVACIÓN']) || null,
+            cataloger: getVal(['CATALOGADORA/DOR', 'CATALOGADOR']) || null,
+            cataloging_date: getVal(['FECHA DE CATALOGACIÓN', 'FECHA']) || null,
             container_id: containerId || null,
             image_url: (() => {
-                const foto = row['FOTO'] || row['foto'] || row['Foto'] || row['IMAGEN'];
-                if (!foto) return row['NIM'] ? `img/${row['NIM']}.jpg` : null;
+                const foto = getVal(['FOTO', 'foto', 'Foto', 'IMAGEN']);
+                if (!foto) {
+                    const nim = getVal(['NIM', 'NIM/Nº INV. ANTERIOR']);
+                    return nim ? `img/${nim}.jpg` : null;
+                }
                 const cleanFoto = foto.toString().trim();
                 return cleanFoto.startsWith('img/') ? cleanFoto : `img/${cleanFoto}`;
             })(),
