@@ -13,21 +13,33 @@ window.verifyOperatorPIN = verifyOperatorPIN;
 window.getContainerById = getContainerById;
 window.getAllContainers = getAllContainers;
 
-// Inicialización segura
+// Inicialización segura con diagnóstico
 function initSupabase() {
     if (!window.supabase) {
-        console.error("La librería de Supabase no se ha cargado. Verifica tu conexión a internet.");
+        alert("CRÍTICO: La librería de Supabase no se cargó. Revisa tu conexión a internet.");
         return null;
     }
     
     const { createClient } = window.supabase;
 
-    if (SUPABASE_CONFIG.url === "TU_SUPABASE_URL") {
-        console.warn("Supabase no configurado. Introduce tus credenciales en js/supabase-config.js");
+    if (!window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.url.includes("TU_SUPABASE_URL")) {
+        alert("ERROR DE CONFIGURACIÓN: Aún tienes la URL de ejemplo en js/supabase-config.js. Cámbiala por la de tu proyecto.");
         return null;
     }
-    supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-    return supabase;
+
+    if (window.SUPABASE_CONFIG.anonKey.length < 50) {
+        alert("ERROR DE CLAVE: La anonKey parece incorrecta (es demasiado corta). Asegúrate de usar la clave 'Legacy' que empieza por 'eyJ'.");
+        return null;
+    }
+
+    try {
+        supabase = createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+        console.log("Conexión con Supabase establecida con éxito.");
+        return supabase;
+    } catch (err) {
+        alert("ERROR AL CONECTAR: " + err.message);
+        return null;
+    }
 }
 
 // --- AUTENTICACIÓN / OPERARIOS ---
