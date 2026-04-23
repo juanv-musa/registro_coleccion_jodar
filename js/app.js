@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (pinEl) pinEl.style.display = 'none';
     if (appEl) appEl.style.display = 'grid';
     
-    showView('dashboard');
+    // Mostrar la estructura pero no cargar datos todavía
+    showView('dashboard', false); 
 
     try {
         initLucide();
