@@ -76,7 +76,12 @@ function mapToSupabase(data, containerId) {
             cataloger: row['CATALOGADORA/DOR'] || null,
             cataloging_date: row['FECHA DE CATALOGACIÓN'] || null,
             container_id: containerId || null,
-            image_url: row['FOTO'] || (row['NIM'] ? `img/${row['NIM']}.jpg` : null),
+            image_url: (() => {
+                const foto = row['FOTO'] || row['foto'] || row['Foto'];
+                if (!foto) return row['NIM'] ? `img/${row['NIM']}.jpg` : null;
+                // Si ya tiene la ruta 'img/', la dejamos. Si no, se la añadimos.
+                return foto.startsWith('img/') ? foto : `img/${foto}`;
+            })(),
             updated_at: new Date()
         };
     });
