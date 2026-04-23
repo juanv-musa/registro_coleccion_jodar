@@ -237,28 +237,59 @@ async function loadInventory() {
 
 function renderInventoryTable(pieces) {
     const tbody = document.getElementById('inventory-body');
+    if (!tbody) return;
+
     tbody.innerHTML = pieces.map(p => {
         const c = p.containers || {};
         const path = c.caja ? `${c.sala} > ${c.caja}` : 'Sin ubicación';
+        const photo = p.image_url ? `<img src="${p.image_url}" class="table-thumb" onerror="this.src='img/placeholder.jpg'">` : '<div class="no-photo-thumb"></div>';
+        
         return `
-            <tr data-id="${p.id}" class="clickable-row">
-                <td class="mono">${p.inventory_number_new}</td>
+            <tr onclick="window.showPieceDetail('${p.id}')" style="cursor: pointer;">
+                <td><span class="badge-id">${p.inventory_number_new || p.id}</span></td>
+                <td class="mono">${p.inventory_number_old || '-'}</td>
+                <td>${photo}</td>
                 <td><strong>${p.name}</strong></td>
-                <td>${path}</td>
-                <td>${p.material}</td>
-                <td><button class="btn-icon-small btn-view-piece" data-id="${p.id}"><i data-lucide="eye"></i></button></td>
+                <td>${p.material || '-'}</td>
+                <td><span class="location-tag">${path}</span></td>
             </tr>
         `;
     }).join('');
-    initLucide();
     
-    tbody.querySelectorAll('.btn-view-piece').forEach(btn => {
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            showPieceDetail(btn.dataset.id);
-        };
-    });
+    if (window.lucide) window.lucide.createIcons();
 }
+
+function filterInventory() {
+    const query = document.getElementById('inventory-search').value.toLowerCase();
+    const filtered = state.allPieces.filter(p => {
+        const text = `${p.name} ${p.inventory_number_new} ${p.inventory_number_old} ${p.material} ${p.provenance}`.toLowerCase();
+        return text.includes(query);
+    });
+    renderInventoryTable(filtered);
+}
+
+let currentSort = { col: null, asc: true };
+function sortInventory(col) {
+    if (currentSort.col === col) {
+        currentSort.asc = !currentSort.asc;
+    } else {
+        currentSort.col = col;
+        currentSort.asc = true;
+    }
+
+    const sorted = [...state.allPieces].sort((a, b) => {
+        let valA = (a[col] || '').toString().toLowerCase();
+        let valB = (b[col] || '').toString().toLowerCase();
+        if (currentSort.asc) return valA.localeCompare(valB);
+        return valB.localeCompare(valA);
+    });
+
+    renderInventoryTable(sorted);
+}
+
+window.filterInventory = filterInventory;
+window.sortInventory = sortInventory;
+window.renderInventoryTable = renderInventoryTable;
 
 // --- PIECE DETAIL & MOVEMENT ---
 async function showPieceDetail(id) {

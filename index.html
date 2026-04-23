@@ -122,22 +122,34 @@
 
                 <!-- Inventory View -->
                 <section id="view-inventory" class="view" style="display: none;">
-                    <div class="search-bar glass">
-                        <i data-lucide="search"></i>
-                        <input type="text" id="inventory-search" placeholder="Busca por nombre, nº inventario o ubicación...">
+                    <div class="view-header">
+                        <div class="search-container">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="inventory-search" placeholder="Buscar por NIM, Objeto, Material..." oninput="window.filterInventory()">
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn-primary" onclick="window.loadInventory()">
+                                <i data-lucide="refresh-cw"></i>
+                                <span class="btn-text">Actualizar</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="inventory-table-container glass">
+
+                    <div class="table-container">
                         <table id="inventory-table">
                             <thead>
                                 <tr>
-                                    <th>Nº Inv</th>
-                                    <th>Nombre</th>
+                                    <th onclick="window.sortInventory('inventory_number_new')">Nº Inv <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                                    <th onclick="window.sortInventory('inventory_number_old')">NIM <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                                    <th>Foto</th>
+                                    <th onclick="window.sortInventory('name')">Objeto <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                                    <th onclick="window.sortInventory('material')">Material <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
                                     <th>Ubicación</th>
-                                    <th>Material</th>
-                                    <th>Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventory-body"></tbody>
+                            <tbody id="inventory-body">
+                                <!-- Se llena con JS -->
+                            </tbody>
                         </table>
                     </div>
                 </section>

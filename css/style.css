@@ -675,3 +675,154 @@ option {
     background: #1a1a1a;
     color: var(--text-main);
 }
+
+/* Inventory View Improvements */
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-container {
+    flex: 1;
+    position: relative;
+    max-width: 500px;
+}
+
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-container input {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: white;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(141, 190, 35, 0.1);
+}
+
+/* Table Thumbnails */
+.table-thumb {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+.no-photo-thumb {
+    width: 45px;
+    height: 45px;
+    background: var(--bg-side);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge-id {
+    font-family: 'JetBrains Mono', monospace;
+    background: #f0fdf4;
+    color: #166534;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.location-tag {
+    background: var(--bg-side);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.sort-icon {
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    opacity: 0.5;
+    vertical-align: middle;
+}
+
+th[onclick] {
+    cursor: pointer;
+    user-select: none;
+}
+
+th[onclick]:hover {
+    background: var(--bg-side);
+}
+
+/* Responsive Table (Cards on Mobile) */
+@media (max-width: 768px) {
+    .view-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #inventory-table thead {
+        display: none;
+    }
+
+    #inventory-table, #inventory-table tbody, #inventory-table tr, #inventory-table td {
+        display: block;
+        width: 100%;
+    }
+
+    #inventory-table tr {
+        margin-bottom: 1rem;
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 0.5rem 1rem;
+        align-items: start;
+    }
+
+    #inventory-table td {
+        text-align: left;
+        padding: 0;
+        border: none;
+    }
+
+    /* Columna de la foto */
+    #inventory-table td:nth-child(3) {
+        grid-row: 1 / 4;
+        grid-column: 1;
+    }
+
+    #inventory-table td:not(:nth-child(3)) {
+        grid-column: 2;
+    }
+
+    .table-thumb {
+        width: 70px;
+        height: 70px;
+    }
+
+    /* Ocultar etiquetas de ubicación en móvil si es necesario, o darlas estilo */
+    .location-tag {
+        display: inline-block;
+        margin-top: 4px;
+    }
+}
