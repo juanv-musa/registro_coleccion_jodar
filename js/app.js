@@ -89,6 +89,8 @@ function showView(viewId) {
 }
 
 async function prepareImportView() {
+    if (typeof supabase === 'undefined' || !supabase) return;
+    
     try {
         const containers = await getAllContainers();
         populateImportDestinationSelect(containers);
@@ -181,6 +183,12 @@ function showPinError() {
 
 // --- DATA LOADING ---
 async function loadDashboardData() {
+    // Si Supabase no está listo, reintentar en 1 segundo
+    if (typeof supabase === 'undefined' || !supabase) {
+        console.log("Dashboard esperando a Supabase...");
+        return;
+    }
+
     try {
         const stats = await getDashboardStats();
         document.getElementById('stats-total').innerText = stats.totalPieces;
@@ -214,6 +222,10 @@ function renderRecentMovements(movements) {
 }
 
 async function loadInventory() {
+    if (typeof supabase === 'undefined' || !supabase) {
+        console.log("Inventario esperando a Supabase...");
+        return;
+    }
     try {
         const data = await getAllPieces();
         state.allPieces = data;
