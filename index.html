@@ -20,10 +20,11 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="js/supabase.js"></script>
     <script>
-        console.log("Comprobando carga de Supabase...");
-        window.addEventListener('load', () => {
-            console.log("Carga completa. Supabase:", typeof window.supabase !== 'undefined' || typeof supabase !== 'undefined');
-        });
+        // Forzar que la variable sea global si el script no lo hizo automáticamente
+        if (typeof supabase !== 'undefined' && !window.supabase) {
+            window.supabase = supabase;
+        }
+        console.log("Supabase detectado:", !!window.supabase);
     </script>
 
     <!-- Styles -->
