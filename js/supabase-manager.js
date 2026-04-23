@@ -15,12 +15,15 @@ window.getAllContainers = getAllContainers;
 
 // Inicialización segura con diagnóstico
 function initSupabase() {
-    if (!window.supabase) {
-        alert("CRÍTICO: La librería de Supabase no se cargó. Revisa tu conexión a internet.");
+    // Detectar librería en cualquier formato
+    const supabaseLib = window.supabase || (typeof supabase !== 'undefined' ? supabase : null);
+
+    if (!supabaseLib) {
+        alert("CRÍTICO: La librería de Supabase no se cargó. Intenta refrescar con Ctrl+F5.");
         return null;
     }
     
-    const { createClient } = window.supabase;
+    const { createClient } = supabaseLib;
 
     if (!window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.url.includes("TU_SUPABASE_URL")) {
         alert("ERROR DE CONFIGURACIÓN: Aún tienes la URL de ejemplo en js/supabase-config.js. Cámbiala por la de tu proyecto.");
