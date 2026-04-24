@@ -424,6 +424,12 @@ body {
     font-weight: 800;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 .status-badge {
     padding: 0.5rem 1rem;
     border-radius: 50px;
@@ -466,13 +472,23 @@ body {
 }
 
 /* Inventory View */
+.table-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
 .search-bar {
     padding: 1rem 1.5rem;
     border-radius: 50px;
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 2rem;
+    flex: 1;
+    min-width: 250px;
 }
 
 .search-bar input {
@@ -519,6 +535,13 @@ tr:hover td {
 }
 
 /* Detail View */
+.detail-header {
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .detail-grid {
     display: grid;
     grid-template-columns: 1fr 340px;
@@ -701,26 +724,91 @@ tr:hover td {
     font-family: inherit;
 }
 
-/* Buttons */
-.btn-gold {
-    background: var(--primary);
-    color: var(--text-dark);
-    border: none;
-    padding: 0.9rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 700;
+/* Buttons Base */
+.btn-gold, .btn-primary, .btn-secondary, .btn-outline, .btn-text, .btn-icon {
     font-family: inherit;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
-.btn-gold:hover {
+/* Primary / Gold (Lime Green based on theme) */
+.btn-gold, .btn-primary {
+    background: var(--primary);
+    color: var(--text-dark);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-weight: 700;
+}
+
+.btn-gold:hover, .btn-primary:hover {
     background: var(--primary-light);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(141, 190, 35, 0.3);
+}
+
+/* Secondary (Subtle Background) */
+.btn-secondary {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-main);
+    border: 1px solid transparent;
+    padding: 0.8rem 1.5rem;
+}
+
+.btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Outline */
+.btn-outline {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 0.8rem 1.5rem;
+}
+
+.btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    background: rgba(141, 190, 35, 0.05);
+}
+
+/* Text Only */
+.btn-text {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 0.5rem 1rem;
+}
+
+.btn-text:hover {
+    color: var(--text-main);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* Icon Buttons */
+.btn-icon {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 0.6rem;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+}
+
+.btn-icon:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--primary);
+    transform: scale(1.05);
 }
 
 /* Scanner Custom Styling */
@@ -790,6 +878,11 @@ tr:hover td {
     padding: 1.25rem;
 }
 
+/* Utilities */
+.w-100 {
+    width: 100%;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -823,6 +916,11 @@ tr:hover td {
 
 .piece-detail-img:hover {
     transform: scale(1.05);
+}
+
+.technical-details {
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
 }
 
 .tech-grid {

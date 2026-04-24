@@ -101,7 +101,8 @@ window.getAllPieces = async function() {
 
 window.getAllContainers = async function() {
     if (!dbClient) return [];
-    const { data } = await dbClient.from('containers').select('*');
+    // Pedimos también las piezas asociadas (solo el ID para no sobrecargar)
+    const { data } = await dbClient.from('containers').select('*, pieces(id)');
     return data || [];
 };
 

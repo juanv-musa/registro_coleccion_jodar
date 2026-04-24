@@ -681,7 +681,6 @@ window.showEditLocationModal = async function(id) {
         document.getElementById('new-cont-modulo').value = container.modulo || '';
         document.getElementById('new-cont-estanteria').value = container.estanteria || '';
         document.getElementById('new-cont-balda').value = container.balda || '';
-        document.getElementById('new-cont-caja').value = container.caja || '';
         
         // Ajustamos la UI del modal
         document.getElementById('modal-container-title').innerText = "Editar Ubicación";
@@ -706,7 +705,7 @@ async function handleAddContainer(e) {
         modulo: document.getElementById('new-cont-modulo').value || null,
         estanteria: document.getElementById('new-cont-estanteria').value || null,
         balda: document.getElementById('new-cont-balda').value || null,
-        caja: document.getElementById('new-cont-caja').value || null,
+        caja: document.getElementById('new-cont-name').value || null,
         updated_at: new Date()
     };
 
