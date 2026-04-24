@@ -307,9 +307,11 @@ function filterInventory() {
     }
     
     const filtered = state.allPieces.filter(p => {
+        const nameStr = (p.name || '').toString().toLowerCase();
+        const objetoStr = (p.objeto || '').toString().toLowerCase();
         const searchStr = [
-            p.name, 
-            p.objeto, 
+            nameStr, 
+            objetoStr, 
             p.inventory_number_new, 
             p.inventory_number_old, 
             p.material, 
@@ -355,7 +357,14 @@ async function showPieceDetail(id) {
         state.currentPiece = p;
         
         const c = p.containers || {};
+        
+        // El título principal es el Objeto, el secundario es la Denominación
         document.getElementById('detail-name').innerText = p.objeto || p.name || 'Sin nombre';
+        const denEl = document.getElementById('detail-denominacion');
+        if (denEl) {
+            denEl.innerText = (p.objeto && p.name && p.objeto !== p.name) ? `Denominación: ${p.name}` : '';
+        }
+        
         document.getElementById('detail-inv-new').innerText = p.inventory_number_new || p.id;
         document.getElementById('detail-material').innerText = p.material || "-";
         document.getElementById('detail-chronology').innerText = p.chronology || "-";
@@ -364,25 +373,25 @@ async function showPieceDetail(id) {
         document.getElementById('detail-full-path').innerText = c.caja ? `${c.sala} > ${c.modulo} > ${c.estanteria}` : "-";
         
         // Campos técnicos nuevos
-        document.getElementById('detail-dimensions').innerText = piece.dimensions || "-";
-        document.getElementById('detail-provenance').innerText = piece.provenance || "-";
-        document.getElementById('detail-author').innerText = piece.author || "-";
-        document.getElementById('detail-section').innerText = piece.section || "-";
-        document.getElementById('detail-description').innerText = piece.description || "Sin descripción.";
-        document.getElementById('detail-observations').innerText = piece.observations || "Sin observaciones.";
+        document.getElementById('detail-dimensions').innerText = p.dimensions || "-";
+        document.getElementById('detail-provenance').innerText = p.provenance || "-";
+        document.getElementById('detail-author').innerText = p.author || "-";
+        document.getElementById('detail-section').innerText = p.section || "-";
+        document.getElementById('detail-description').innerText = p.description || "Sin descripción.";
+        document.getElementById('detail-observations').innerText = p.observations || "Sin observaciones.";
         
         // Manejo de imagen
         const imgContainer = document.getElementById('detail-image-container');
         const imgEl = document.getElementById('detail-image');
-        if (piece.image_url) {
-            imgEl.src = piece.image_url;
+        if (p.image_url) {
+            imgEl.src = p.image_url;
             imgContainer.style.display = 'block';
         } else {
             imgContainer.style.display = 'none';
         }
         
-        generatePieceQR('piece-qr-display', piece.id);
-        renderPieceHistory(piece.movements);
+        generatePieceQR('piece-qr-display', p.id);
+        renderPieceHistory(p.movements);
         showView('detail');
     } catch (err) {
         alert("Error al cargar detalle: " + err.message);
@@ -533,18 +542,8 @@ function setupEventListeners() {
     safeOnClick('btn-sync', loadDashboardData);
     safeOnClick('btn-back-to-inventory', () => showView('inventory'));
 
-    const searchInput = document.getElementById('inventory-search');
-    if (searchInput) {
-        searchInput.oninput = (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = state.allPieces.filter(p => 
-                p.name.toLowerCase().includes(q) || 
-                (p.objeto && p.objeto.toLowerCase().includes(q)) ||
-                p.inventory_number_new.toLowerCase().includes(q)
-            );
-            renderInventoryTable(filtered);
-        };
-    }
+    // El buscador ya tiene oninput en el HTML llamando a window.filterInventory()
+    // Eliminamos el listener redundante aquí para evitar conflictos.
 
     // Import Flow
     safeListener('csv-input', 'change', (e) => {
