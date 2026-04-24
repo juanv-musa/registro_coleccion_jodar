@@ -655,19 +655,52 @@ function setupEventListeners() {
 
 // --- LOCATIONS & CONTAINERS ---
 window.showAddContainerModal = function() {
+    document.getElementById('modal-container-title').innerText = "Nueva Ubicación";
+    document.getElementById('btn-submit-container').innerText = "Crear Ubicación";
+    document.getElementById('edit-cont-id').value = "";
+    document.getElementById('form-add-container').reset();
     document.getElementById('add-container-modal').style.display = 'flex';
 };
 
 window.closeAddContainerModal = function() {
     document.getElementById('add-container-modal').style.display = 'none';
     document.getElementById('form-add-container').reset();
+    document.getElementById('edit-cont-id').value = "";
+};
+
+window.showEditLocationModal = async function(id) {
+    try {
+        // Obtenemos los datos actuales
+        const container = await getContainerById(id);
+        if (!container) throw new Error("No se encontró la ubicación");
+        
+        // Rellenamos el formulario
+        document.getElementById('edit-cont-id').value = container.id;
+        document.getElementById('new-cont-name').value = container.name || '';
+        document.getElementById('new-cont-sala').value = container.sala || '';
+        document.getElementById('new-cont-modulo').value = container.modulo || '';
+        document.getElementById('new-cont-estanteria').value = container.estanteria || '';
+        document.getElementById('new-cont-balda').value = container.balda || '';
+        document.getElementById('new-cont-caja').value = container.caja || '';
+        
+        // Ajustamos la UI del modal
+        document.getElementById('modal-container-title').innerText = "Editar Ubicación";
+        document.getElementById('btn-submit-container').innerText = "Guardar Cambios";
+        document.getElementById('add-container-modal').style.display = 'flex';
+    } catch (err) {
+        console.error(err);
+        alert("Error al cargar la ubicación para editar.");
+    }
 };
 
 async function handleAddContainer(e) {
     e.preventDefault();
     
+    const editId = document.getElementById('edit-cont-id').value;
+    const isEdit = !!editId;
+
     const containerData = {
-        id: `C-${Date.now()}`,
+        id: isEdit ? editId : `C-${Date.now()}`,
         name: document.getElementById('new-cont-name').value,
         sala: document.getElementById('new-cont-sala').value,
         modulo: document.getElementById('new-cont-modulo').value || null,
@@ -678,8 +711,8 @@ async function handleAddContainer(e) {
     };
 
     try {
-        await createContainer(containerData);
-        alert("Ubicación creada con éxito");
+        await createContainer(containerData); // upsert handles both create and update
+        alert(isEdit ? "Ubicación actualizada con éxito" : "Ubicación creada con éxito");
         closeAddContainerModal();
         loadLocations(); // Recargar la lista
     } catch (err) {
@@ -721,6 +754,9 @@ function renderLocationsGrid(containers) {
                     </div>
                 </div>
                 <div class="location-actions">
+                    <button class="btn-icon" onclick="window.showEditLocationModal('${c.id}')" title="Editar">
+                        <i data-lucide="edit-3"></i>
+                    </button>
                     <button class="btn-icon" onclick="showContainerDetail('${c.id}')" title="Ver contenido">
                         <i data-lucide="eye"></i>
                     </button>

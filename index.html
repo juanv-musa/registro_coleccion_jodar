@@ -383,8 +383,9 @@
     <!-- Add Container Modal -->
     <div id="add-container-modal" class="modal-overlay" style="display: none;">
         <div class="modal glass">
-            <h2>Nueva Ubicación</h2>
+            <h2 id="modal-container-title">Nueva Ubicación</h2>
             <form id="form-add-container" class="mt-2">
+                <input type="hidden" id="edit-cont-id" value="">
                 <div class="form-group mb-1">
                     <label>Nombre / ID Caja</label>
                     <input type="text" id="new-cont-name" class="glass-input" placeholder="Ej: Caja 42" required>
@@ -416,7 +417,7 @@
                 
                 <div class="modal-actions mt-2">
                     <button type="button" onclick="closeAddContainerModal()" class="btn-text">Cancelar</button>
-                    <button type="submit" class="btn-gold">Crear Ubicación</button>
+                    <button type="submit" id="btn-submit-container" class="btn-gold">Crear Ubicación</button>
                 </div>
             </form>
         </div>
