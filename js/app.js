@@ -198,7 +198,6 @@ async function loadDashboardData() {
         const stats = await getDashboardStats();
         document.getElementById('stats-total').innerText = stats.totalPieces;
         document.getElementById('stats-today').innerText = stats.movementsToday;
-        document.getElementById('stats-active-room').innerText = stats.activeRoom;
         
         const recent = await getRecentMovements();
         renderRecentMovements(recent);
@@ -208,7 +207,10 @@ async function loadDashboardData() {
 }
 
 function renderRecentMovements(movements) {
+    console.log("Renderizando movimientos:", movements);
     const container = document.getElementById('recent-movements-list');
+    if (!container) return;
+    
     if (!movements || movements.length === 0) {
         container.innerHTML = '<p class="empty-state">No hay movimientos registrados.</p>';
         return;
@@ -293,9 +295,19 @@ function renderInventoryTable(pieces) {
 }
 
 function filterInventory() {
-    const query = document.getElementById('inventory-search').value.toLowerCase();
+    const queryEl = document.getElementById('inventory-search');
+    if (!queryEl) return;
+    
+    const query = queryEl.value.toLowerCase();
     const filtered = state.allPieces.filter(p => {
-        const text = `${p.name} ${p.objeto || ''} ${p.inventory_number_new} ${p.inventory_number_old} ${p.material} ${p.provenance}`.toLowerCase();
+        const text = [
+            p.name, 
+            p.objeto, 
+            p.inventory_number_new, 
+            p.inventory_number_old, 
+            p.material, 
+            p.provenance
+        ].join(' ').toLowerCase();
         return text.includes(query);
     });
     renderInventoryTable(filtered);

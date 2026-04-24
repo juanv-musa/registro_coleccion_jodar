@@ -99,31 +99,23 @@
                 <!-- Dashboard View -->
                 <section id="view-dashboard" class="view">
                     <div class="stats-grid">
-                        <div class="stat-card glass">
+                        <div class="stat-card glass clickable" onclick="showView('inventory')">
                             <span class="stat-label">Total Piezas</span>
                             <span class="stat-value" id="stats-total">0</span>
                             <i data-lucide="gem"></i>
                         </div>
-                        <div class="stat-card glass gold">
+                        <div class="stat-card glass gold clickable" onclick="showView('dashboard')">
                             <span class="stat-label">Movimientos Hoy</span>
                             <span class="stat-value" id="stats-today">0</span>
                             <i data-lucide="package-search"></i>
                         </div>
-                        <div class="stat-card glass">
-                            <span class="stat-label">Sala más activa</span>
-                            <span class="stat-value" id="stats-active-room">-</span>
-                            <i data-lucide="map-pin"></i>
-                        </div>
                     </div>
                     
                     <div class="dashboard-panels">
-                        <div class="panel glass">
-                            <div class="panel-header">
-                                <i data-lucide="activity"></i>
+                        <div class="panel">
+                            <div class="panel-header-simple">
+                                <i data-lucide="history"></i>
                                 <h3>Actividad Reciente</h3>
-                                <button class="btn-icon ms-auto" onclick="window.exportMovements()" title="Exportar historial">
-                                    <i data-lucide="download"></i>
-                                </button>
                             </div>
                             <div id="recent-movements-list" class="log-list">
                                 <p class="empty-state">No hay registros recientes</p>
@@ -137,14 +129,13 @@
                     <div class="table-actions mb-2">
                         <div class="search-bar glass">
                             <i data-lucide="search"></i>
-                            <input type="text" id="inventory-search" placeholder="Buscar pieza, nº inv, material...">
+                            <input type="text" id="inventory-search" placeholder="Buscar pieza, nº inv, material..." oninput="window.filterInventory()">
                         </div>
-                        <button class="btn-secondary" onclick="window.exportInventory()">
-                            <i data-lucide="download"></i>
-                            Exportar
-                        </button>
-                    </div>
                         <div class="header-actions">
+                            <button class="btn-secondary" onclick="window.exportInventory()">
+                                <i data-lucide="download"></i>
+                                Exportar
+                            </button>
                             <button class="btn-primary" onclick="window.loadInventory()">
                                 <i data-lucide="refresh-cw"></i>
                                 <span class="btn-text">Actualizar</span>
