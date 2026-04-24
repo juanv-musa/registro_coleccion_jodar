@@ -15,48 +15,32 @@ function startScanner(elementId, onScanSuccess) {
         html5QrScanner.clear();
     }
 
-    // Configuración optimizada para móviles
     const config = { 
-        fps: 15, // Un poco más rápido para mejor respuesta
+        fps: 20, // Mayor velocidad para escaneo instantáneo
         qrbox: (viewWidth, viewHeight) => {
-            // Cuadro de escaneo dinámico: 70% del ancho o 250px
+            // Cuadro de escaneo más grande para móviles
             const minDim = Math.min(viewWidth, viewHeight);
-            const boxSize = Math.floor(minDim * 0.7);
-            return { width: boxSize, height: boxSize };
+            return { width: Math.floor(minDim * 0.8), height: Math.floor(minDim * 0.8) };
         },
         aspectRatio: 1.0,
         rememberLastUsedCamera: true,
-        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+        videoConstraints: {
+            facingMode: { exact: "environment" } // Obliga a usar la cámara trasera
+        }
     };
 
     html5QrScanner = new Html5QrcodeScanner(elementId, config, false);
 
     html5QrScanner.render((decodedText, decodedResult) => {
-        // Detener el escáner inmediatamente tras éxito para ahorrar batería y evitar scans múltiples
         html5QrScanner.clear().then(() => {
             onScanSuccess(decodedText, decodedResult);
-        }).catch(err => {
-            console.warn("Error clearing scanner:", err);
+        }).catch(() => {
             onScanSuccess(decodedText, decodedResult);
         });
     }, (error) => {
-        // Los errores de "no detectado" son normales y frecuentes durante el escaneo
+        // Ignorar errores de escaneo fallido durante la búsqueda
     });
-
-    // Pequeño hack para forzar la cámara trasera en muchos dispositivos
-    setTimeout(() => {
-        const select = document.querySelector(`#${elementId} select`);
-        if (select && select.options.length > 1) {
-            for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].text.toLowerCase().includes('back') || 
-                    select.options[i].text.toLowerCase().includes('trasera') ||
-                    select.options[i].text.toLowerCase().includes('environment')) {
-                    select.selectedIndex = i;
-                    break;
-                }
-            }
-        }
-    }, 2000);
 }
 
 function stopScanner() {

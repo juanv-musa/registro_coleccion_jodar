@@ -554,8 +554,29 @@ tr:hover td {
 
 .scanner-container {
     position: relative;
-    padding: 0 !important; /* El scanner debe ocupar todo el espacio */
+    padding: 0 !important;
     overflow: hidden;
+    min-height: 300px;
+}
+
+/* Animación de escaneo (láser) */
+.scanner-container::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+    animation: scanLine 2s linear infinite;
+    z-index: 5;
+}
+
+@keyframes scanLine {
+    0% { top: 0; }
+    50% { top: 100%; }
+    100% { top: 0; }
 }
 
 .scanner-status {

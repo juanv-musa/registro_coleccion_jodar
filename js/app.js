@@ -232,8 +232,16 @@ async function loadInventory() {
     }
     try {
         const data = await getAllPieces();
-        state.allPieces = data;
-        renderInventoryTable(data);
+        
+        // Ordenar correlativamente por número de inventario (Nº Inv)
+        const sorted = data.sort((a, b) => {
+            const valA = (a.inventory_number_new || "").toString();
+            const valB = (b.inventory_number_new || "").toString();
+            return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
+        state.allPieces = sorted;
+        renderInventoryTable(sorted);
     } catch (err) {
         console.error("Error cargando inventario:", err);
     }
