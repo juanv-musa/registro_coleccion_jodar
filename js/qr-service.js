@@ -15,21 +15,48 @@ function startScanner(elementId, onScanSuccess) {
         html5QrScanner.clear();
     }
 
-    html5QrScanner = new Html5QrcodeScanner(
-        elementId, 
-        { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-            rememberLastUsedCamera: true
-        }
-    );
+    // Configuración optimizada para móviles
+    const config = { 
+        fps: 15, // Un poco más rápido para mejor respuesta
+        qrbox: (viewWidth, viewHeight) => {
+            // Cuadro de escaneo dinámico: 70% del ancho o 250px
+            const minDim = Math.min(viewWidth, viewHeight);
+            const boxSize = Math.floor(minDim * 0.7);
+            return { width: boxSize, height: boxSize };
+        },
+        aspectRatio: 1.0,
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    };
+
+    html5QrScanner = new Html5QrcodeScanner(elementId, config, false);
 
     html5QrScanner.render((decodedText, decodedResult) => {
-        html5QrScanner.clear();
-        onScanSuccess(decodedText, decodedResult);
+        // Detener el escáner inmediatamente tras éxito para ahorrar batería y evitar scans múltiples
+        html5QrScanner.clear().then(() => {
+            onScanSuccess(decodedText, decodedResult);
+        }).catch(err => {
+            console.warn("Error clearing scanner:", err);
+            onScanSuccess(decodedText, decodedResult);
+        });
     }, (error) => {
+        // Los errores de "no detectado" son normales y frecuentes durante el escaneo
     });
+
+    // Pequeño hack para forzar la cámara trasera en muchos dispositivos
+    setTimeout(() => {
+        const select = document.querySelector(`#${elementId} select`);
+        if (select && select.options.length > 1) {
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].text.toLowerCase().includes('back') || 
+                    select.options[i].text.toLowerCase().includes('trasera') ||
+                    select.options[i].text.toLowerCase().includes('environment')) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }, 2000);
 }
 
 function stopScanner() {

@@ -544,11 +544,38 @@ tr:hover td {
     border: none !important;
     border-radius: var(--radius-lg);
     overflow: hidden;
+    background: #000; /* Fondo negro mientras carga la cámara */
 }
 
-#qr-reader__dashboard {
-    background: var(--bg-card);
-    padding: 1rem !important;
+.scanner-container-wrapper {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.scanner-container {
+    position: relative;
+    padding: 0 !important; /* El scanner debe ocupar todo el espacio */
+    overflow: hidden;
+}
+
+.scanner-status {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 10;
+}
+
+.scanner-instructions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
 }
 
 /* Animations */
