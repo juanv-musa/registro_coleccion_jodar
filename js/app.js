@@ -17,7 +17,9 @@ const state = {
     tempImportData: [],
     moveMode: false,
     targetContainer: null,
-    filteredPieces: null
+    filteredPieces: null,
+    allLocations: [],
+    filteredLocations: null
 };
 
 // --- INITIALIZATION ---
@@ -729,11 +731,29 @@ async function loadLocations() {
     if (typeof dbClient === 'undefined' || !dbClient) return;
     try {
         const containers = await getAllContainers();
+        state.allLocations = containers;
         renderLocationsGrid(containers);
     } catch (err) {
         console.error("Error cargando ubicaciones:", err);
     }
 }
+
+window.filterLocations = function() {
+    const queryEl = document.getElementById('locations-search');
+    if (!queryEl) return;
+    const query = queryEl.value.toLowerCase().trim();
+    if (!query) {
+        state.filteredLocations = null;
+        renderLocationsGrid(state.allLocations);
+        return;
+    }
+    const filtered = state.allLocations.filter(c => {
+        const str = [c.name, c.sala, c.modulo, c.estanteria, c.caja].map(v => (v||'').toString().toLowerCase()).join(' ');
+        return str.includes(query);
+    });
+    state.filteredLocations = filtered;
+    renderLocationsGrid(filtered);
+};
 
 function renderLocationsGrid(containers) {
     const list = document.getElementById('locations-list');
