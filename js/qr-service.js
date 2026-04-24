@@ -122,8 +122,8 @@ function downloadContainerQR(containerId, name = "Caja") {
                 </div>
                 <script>
                     const qrCode = new QRCodeStyling({
-                        width: 150, height: 150, type: "svg", data: "${containerId}",
-                        dotsOptions: { color: "#000", type: "rounded" },
+                        width: 500, height: 500, type: "svg", data: "${containerId}",
+                        dotsOptions: { color: "#000", type: "square" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qrCode.append(document.getElementById("qr-canvas"));
@@ -222,8 +222,8 @@ window.printPieceQR = function() {
                 </div>
                 <script>
                     const qrCode = new QRCodeStyling({
-                        width: 100, height: 100, type: "svg", data: "${p.id}",
-                        dotsOptions: { color: "#000", type: "rounded" },
+                        width: 500, height: 500, type: "svg", data: "${p.id}",
+                        dotsOptions: { color: "#000", type: "square" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qrCode.append(document.getElementById("qr-canvas"));
@@ -286,8 +286,8 @@ window.printFilteredPieces = function() {
                 const pieces = ${JSON.stringify(pieces.map(p => p.id))};
                 pieces.forEach(id => {
                     const qr = new QRCodeStyling({
-                        width: 100, height: 100, type: "svg", data: id,
-                        dotsOptions: { color: "#000", type: "rounded" },
+                        width: 500, height: 500, type: "svg", data: id,
+                        dotsOptions: { color: "#000", type: "square" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qr.append(document.getElementById("qr-" + id));
@@ -341,8 +341,8 @@ window.printFilteredLocations = function() {
                 const locs = ${JSON.stringify(locations.map(c => c.id))};
                 locs.forEach(id => {
                     const qr = new QRCodeStyling({
-                        width: 150, height: 150, type: "svg", data: id,
-                        dotsOptions: { color: "#000", type: "rounded" },
+                        width: 500, height: 500, type: "svg", data: id,
+                        dotsOptions: { color: "#000", type: "square" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qr.append(document.getElementById("qr-" + id));

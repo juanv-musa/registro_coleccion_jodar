@@ -318,6 +318,8 @@ body {
 .user-avatar {
     width: 40px;
     height: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
     background: var(--primary);
     color: var(--text-dark);
     display: flex;
@@ -325,6 +327,7 @@ body {
     justify-content: center;
     border-radius: 50%;
     font-weight: 700;
+    overflow: hidden;
 }
 
 .user-info p {

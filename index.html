@@ -65,6 +65,10 @@
                         <i data-lucide="database-zap"></i>
                         <span>Importar</span>
                     </button></li>
+                    <li><button class="nav-btn" data-view="users">
+                        <i data-lucide="users"></i>
+                        <span>Usuarios</span>
+                    </button></li>
                 </ul>
             </nav>
             <div class="user-status glass">
@@ -78,7 +82,7 @@
                 <button id="btn-logout" title="Salir"><i data-lucide="log-out"></i></button>
             </div>
             <div class="sidebar-footer">
-                <span class="version-tag">v2.2.0</span>
+                <span class="version-tag">Musaraña 2026 | v2.2.0</span>
             </div>
         </aside>
 
@@ -328,6 +332,22 @@
                         </div>
 
                         <div id="import-preview" class="preview-area"></div>
+                    </div>
+                </section>
+
+                <!-- Users View -->
+                <section id="view-users" class="view" style="display: none;">
+                    <div class="section-header">
+                        <h2>Gestión de Usuarios</h2>
+                        <div class="header-actions">
+                            <button class="btn-gold" onclick="alert('Módulo en construcción')">
+                                <i data-lucide="plus"></i>
+                                Nuevo Usuario
+                            </button>
+                        </div>
+                    </div>
+                    <div class="glass p-2">
+                        <p class="text-muted">Módulo en construcción. Aquí podrás gestionar los PINs y roles de los operadores.</p>
                     </div>
                 </section>
             </div>
