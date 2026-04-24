@@ -770,6 +770,71 @@ th[onclick]:hover {
     background: var(--bg-side);
 }
 
+/* --- RESPONSIVE DESIGN --- */
+.mobile-only { display: none; }
+
+@media (max-width: 992px) {
+    #app {
+        grid-template-columns: 1fr; /* Una sola columna en tablets/móvil */
+    }
+
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 1500;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .mobile-only { display: flex; }
+
+    .content {
+        padding: 1.5rem;
+        height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .top-header h1 {
+        font-size: 1.5rem;
+    }
+
+    /* Ajuste de tarjetas de estadísticas */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    /* Detalle de pieza en móvil */
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-side {
+        order: -1; /* QR arriba en móvil */
+    }
+
+    .piece-image-header {
+        height: 200px;
+    }
+
+    .tech-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 /* Responsive Table (Cards on Mobile) */
 @media (max-width: 768px) {
     .view-header {
@@ -794,9 +859,10 @@ th[onclick]:hover {
         box-shadow: var(--shadow);
         border: 1px solid var(--border);
         display: grid;
-        grid-template-columns: 70px 1fr;
+        grid-template-columns: 80px 1fr;
         gap: 0.5rem 1rem;
         align-items: start;
+        cursor: pointer;
     }
 
     #inventory-table td {
@@ -815,14 +881,31 @@ th[onclick]:hover {
         grid-column: 2;
     }
 
+    /* Ocultar etiquetas de encabezado internas si se desea, o darlas estilo */
+    #inventory-table td:nth-child(4) { font-size: 1.1rem; } /* Nombre/Objeto más grande */
+    
     .table-thumb {
-        width: 70px;
-        height: 70px;
+        width: 80px;
+        height: 80px;
     }
 
-    /* Ocultar etiquetas de ubicación en móvil si es necesario, o darlas estilo */
     .location-tag {
         display: inline-block;
         margin-top: 4px;
+    }
+
+    /* Numpad en móvil */
+    .pin-card {
+        padding: 1.5rem;
+        max-width: 340px;
+    }
+    
+    .pin-numpad {
+        gap: 1rem;
+    }
+    
+    .pin-numpad button {
+        height: 50px;
+        font-size: 1.25rem;
     }
 }

@@ -81,16 +81,26 @@ function downloadQR(qrInstance, filename = "qr-pieza") {
 
 function downloadContainerQR(containerId, name = "Caja") {
     const qrCode = new QRCodeStyling({
-        width: 300,
-        height: 300,
+        width: 400, // Aumentar tamaño base
+        height: 400,
         type: "svg",
         data: containerId,
         image: "assets/logo.png",
-        dotsOptions: { color: "#C69C6D", type: "rounded" }, // Color dorado para cajas
+        dotsOptions: { 
+            color: "#332211", // Café muy oscuro para máximo contraste (mejor que el dorado claro)
+            type: "square" // Cuadrados son más fáciles de leer por sensores antiguos
+        },
         backgroundOptions: { color: "#ffffff" },
-        imageOptions: { crossOrigin: "anonymous", margin: 5 },
-        cornersSquareOptions: { type: "extra-rounded", color: "#C69C6D" },
-        cornersDotOptions: { type: "dot", color: "#C69C6D" }
+        imageOptions: { 
+            crossOrigin: "anonymous", 
+            margin: 10, // Más margen para que el logo no tape datos críticos
+            imageSize: 0.3 // Logo un poco más pequeño
+        },
+        cornersSquareOptions: { type: "square", color: "#332211" },
+        cornersDotOptions: { type: "square", color: "#332211" },
+        qrOptions: {
+            errorCorrectionLevel: 'H' // Nivel de corrección alto para compensar el logo
+        }
     });
 
     qrCode.download({ name: `QR-${name}-${containerId}`, extension: "png" });

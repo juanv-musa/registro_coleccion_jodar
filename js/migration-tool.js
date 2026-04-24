@@ -69,11 +69,15 @@ function mapToSupabase(data, containerId) {
         const rawId = getVal(['NUMERACIÓN', 'NIM', 'Nº INV']) || `TEMP-${Date.now()}-${index}`;
         const pieceId = rawId.toString().startsWith('P-') ? rawId : `P-${rawId}`;
         
+        const name = (getVal(['TÍTULO', 'DENOMINACIÓN', 'PIEZA']) || 'Sin nombre').toString().trim();
+        const objeto = (getVal(['OBJETO']) || name).toString().trim();
+
         return {
             id: pieceId,
             inventory_number_new: (getVal(['NUMERACIÓN', 'Nº INV']) || pieceId).toString().trim(),
             inventory_number_old: getVal(['NIM', 'Nº ANTERIOR', 'NIM/Nº INV. ANTERIOR']),
-            name: (getVal(['TÍTULO', 'OBJETO', 'DENOMINACIÓN', 'PIEZA']) || 'Sin nombre').toString().trim(),
+            name: name,
+            objeto: objeto,
             section: getVal(['SECCIÓN']) || null,
             subsection: getVal(['SUBSECCIÓN']) || null,
             material: getVal(['MATERIA', 'TÉCNICA', 'MATERIAL']) || 'Desconocido',

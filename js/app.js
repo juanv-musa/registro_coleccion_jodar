@@ -82,6 +82,10 @@ function showView(viewId) {
 
     state.currentView = viewId;
     
+    // Cerrar sidebar en móvil al cambiar de vista
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.classList.remove('active');
+
     if (viewId === 'dashboard') loadDashboardData();
     if (viewId === 'inventory') loadInventory();
     if (viewId === 'scanner') startPieceScanner();
@@ -249,7 +253,7 @@ function renderInventoryTable(pieces) {
                 <td><span class="badge-id">${p.inventory_number_new || p.id}</span></td>
                 <td class="mono">${p.inventory_number_old || '-'}</td>
                 <td>${photo}</td>
-                <td><strong>${p.name}</strong></td>
+                <td><strong>${p.objeto || p.name}</strong></td>
                 <td>${p.material || '-'}</td>
                 <td><span class="location-tag">${path}</span></td>
             </tr>
@@ -262,7 +266,7 @@ function renderInventoryTable(pieces) {
 function filterInventory() {
     const query = document.getElementById('inventory-search').value.toLowerCase();
     const filtered = state.allPieces.filter(p => {
-        const text = `${p.name} ${p.inventory_number_new} ${p.inventory_number_old} ${p.material} ${p.provenance}`.toLowerCase();
+        const text = `${p.name} ${p.objeto || ''} ${p.inventory_number_new} ${p.inventory_number_old} ${p.material} ${p.provenance}`.toLowerCase();
         return text.includes(query);
     });
     renderInventoryTable(filtered);
@@ -301,7 +305,7 @@ async function showPieceDetail(id) {
         state.currentPiece = piece;
         
         const c = piece.containers || {};
-        document.getElementById('detail-name').innerText = piece.name;
+        document.getElementById('detail-name').innerText = piece.objeto || piece.name;
         document.getElementById('detail-inv-new').innerText = piece.inventory_number_new;
         document.getElementById('detail-material').innerText = piece.material;
         document.getElementById('detail-chronology').innerText = piece.chronology;
@@ -444,6 +448,7 @@ function setupEventListeners() {
             const q = e.target.value.toLowerCase();
             const filtered = state.allPieces.filter(p => 
                 p.name.toLowerCase().includes(q) || 
+                (p.objeto && p.objeto.toLowerCase().includes(q)) ||
                 p.inventory_number_new.toLowerCase().includes(q)
             );
             renderInventoryTable(filtered);
@@ -525,6 +530,24 @@ function setupEventListeners() {
 
     // Formulario de nueva ubicación
     safeListener('form-add-container', 'submit', handleAddContainer);
+
+    // Toggle Sidebar para móvil
+    safeOnClick('btn-menu-toggle', () => {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.toggle('active');
+    });
+
+    // Cerrar sidebar al hacer click fuera en móvil
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 992) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.getElementById('btn-menu-toggle');
+            if (sidebar && sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        }
+    });
 }
 
 // --- LOCATIONS & CONTAINERS ---
