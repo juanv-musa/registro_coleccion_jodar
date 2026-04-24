@@ -126,3 +126,9 @@ window.createContainer = async function(containerData) {
     if (error) throw error;
     return data;
 };
+
+window.getContainerById = async function(id) {
+    if (!dbClient) return null;
+    const { data } = await dbClient.from('containers').select('*, pieces(*)').eq('id', id).single();
+    return data;
+};

@@ -421,6 +421,42 @@ async function showContainerDetail(id) {
     }
 }
 
+async function handleDestinationScanned(id) {
+    try {
+        const container = await getContainerById(id);
+        if (!container) {
+            alert("Contenedor no encontrado.");
+            return;
+        }
+        
+        state.targetContainer = container;
+        state.moveMode = false;
+        
+        document.getElementById('dest-name').innerText = container.name;
+        document.getElementById('dest-path').innerText = `${container.sala} > ${container.modulo} > ${container.estanteria}`;
+        
+        document.getElementById('move-step-scan').style.display = 'none';
+        document.getElementById('move-step-confirm').style.display = 'block';
+        document.getElementById('move-modal').style.display = 'flex';
+    } catch (err) {
+        alert("Error al identificar destino: " + err.message);
+    }
+}
+
+async function movePieceToContainer(pieceId, containerId, operatorPIN) {
+    // Encontrar operador por PIN
+    let operator = await verifyOperatorPIN(operatorPIN);
+    
+    // Fallback para pruebas si no hay conexión o es el PIN de test
+    if (!operator && operatorPIN === "1234") {
+        operator = { name: "Invitado (Test)" };
+    }
+
+    if (!operator) throw new Error("PIN de operador no válido para esta operación.");
+    
+    return await updatePieceLocation(pieceId, containerId, operator.name);
+}
+
 // --- EVENT LISTENERS ---
 function setupEventListeners() {
     const safeListener = (id, event, fn) => {
