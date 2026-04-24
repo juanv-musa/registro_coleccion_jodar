@@ -14,7 +14,9 @@ const state = {
         today: 0,
         activeRoom: "-"
     },
-    tempImportData: []
+    tempImportData: [],
+    moveMode: false,
+    targetContainer: null
 };
 
 // --- INITIALIZATION ---
@@ -432,13 +434,18 @@ async function handleDestinationScanned(id) {
         state.targetContainer = container;
         state.moveMode = false;
         
+        // Volver a la vista de detalle para que el modal se vea sobre la pieza
+        showView('detail');
+        
         document.getElementById('dest-name').innerText = container.name;
         document.getElementById('dest-path').innerText = `${container.sala} > ${container.modulo} > ${container.estanteria}`;
         
         document.getElementById('move-step-scan').style.display = 'none';
         document.getElementById('move-step-confirm').style.display = 'block';
         document.getElementById('move-modal').style.display = 'flex';
+        document.getElementById('move-auth-pin').value = ""; // Asegurar que esté vacío
     } catch (err) {
+        console.error(err);
         alert("Error al identificar destino: " + err.message);
     }
 }
@@ -553,10 +560,18 @@ function setupEventListeners() {
     });
 
     safeOnClick('btn-confirm-move', async () => {
+        const pin = document.getElementById('move-auth-pin').value;
+        if (!pin) {
+            alert("Introduce tu PIN para autorizar el movimiento.");
+            return;
+        }
+
         try {
-            await movePieceToContainer(state.currentPiece.id, state.targetContainer.id, state.currentUser.pin);
+            await movePieceToContainer(state.currentPiece.id, state.targetContainer.id, pin);
             document.getElementById('move-modal').style.display = 'none';
+            document.getElementById('move-auth-pin').value = ""; // Limpiar
             showPieceDetail(state.currentPiece.id); 
+            alert("¡Movimiento registrado con éxito!");
         } catch (err) { 
             console.error(err);
             const msg = err && typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err);
