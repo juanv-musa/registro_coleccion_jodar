@@ -222,7 +222,9 @@ function renderRecentMovements(movements) {
         const month = date.toLocaleString('es-ES', { month: 'short' });
         const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         
-        const pieceName = m.pieces?.objeto || m.pieces?.name || "Pieza desconocida";
+        // Manejar respuesta si viene como objeto o como array (caso especial de Supabase)
+        const pieceData = Array.isArray(m.pieces) ? m.pieces[0] : m.pieces;
+        const pieceName = pieceData?.objeto || pieceData?.name || "Pieza desconocida";
         const origin = m.origin?.name || "Origen";
         const destination = m.destination?.name || "Destino";
 
@@ -298,17 +300,24 @@ function filterInventory() {
     const queryEl = document.getElementById('inventory-search');
     if (!queryEl) return;
     
-    const query = queryEl.value.toLowerCase();
+    const query = queryEl.value.toLowerCase().trim();
+    if (!query) {
+        renderInventoryTable(state.allPieces);
+        return;
+    }
+    
     const filtered = state.allPieces.filter(p => {
-        const text = [
+        const searchStr = [
             p.name, 
             p.objeto, 
             p.inventory_number_new, 
             p.inventory_number_old, 
             p.material, 
-            p.provenance
-        ].join(' ').toLowerCase();
-        return text.includes(query);
+            p.provenance,
+            p.chronology
+        ].map(v => (v || '').toString().toLowerCase()).join(' ');
+        
+        return searchStr.includes(query);
     });
     renderInventoryTable(filtered);
 }
@@ -342,14 +351,14 @@ window.renderInventoryTable = renderInventoryTable;
 // --- PIECE DETAIL & MOVEMENT ---
 async function showPieceDetail(id) {
     try {
-        const piece = await getPieceById(id);
-        state.currentPiece = piece;
+        const p = await getPieceById(id);
+        state.currentPiece = p;
         
-        const c = piece.containers || {};
-        document.getElementById('detail-name').innerText = piece.objeto || piece.name;
-        document.getElementById('detail-inv-new').innerText = piece.inventory_number_new;
-        document.getElementById('detail-material').innerText = piece.material;
-        document.getElementById('detail-chronology').innerText = piece.chronology;
+        const c = p.containers || {};
+        document.getElementById('detail-name').innerText = p.objeto || p.name || 'Sin nombre';
+        document.getElementById('detail-inv-new').innerText = p.inventory_number_new || p.id;
+        document.getElementById('detail-material').innerText = p.material || "-";
+        document.getElementById('detail-chronology').innerText = p.chronology || "-";
         
         document.getElementById('detail-container-name').innerText = c.name || "Sin contenedor";
         document.getElementById('detail-full-path').innerText = c.caja ? `${c.sala} > ${c.modulo} > ${c.estanteria}` : "-";
@@ -601,7 +610,12 @@ function setupEventListeners() {
             await movePieceToContainer(state.currentPiece.id, state.targetContainer.id, pin);
             document.getElementById('move-modal').style.display = 'none';
             document.getElementById('move-auth-pin').value = ""; // Limpiar
-            showPieceDetail(state.currentPiece.id); 
+            
+            // Recargar todo para asegurar que se vea el cambio
+            await loadInventory();
+            await loadDashboardData();
+            await showPieceDetail(state.currentPiece.id); 
+            
             alert("¡Movimiento registrado con éxito!");
         } catch (err) { 
             console.error(err);

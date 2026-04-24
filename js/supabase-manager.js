@@ -57,20 +57,23 @@ window.getDashboardStats = async function() {
 window.getRecentMovements = async function() {
     if (!dbClient) return [];
     try {
-        // Traer datos relacionados: pieza, origen y destino
-        const { data } = await dbClient.from('movements')
+        const { data, error } = await dbClient.from('movements')
             .select(`
                 *,
-                pieces(name, objeto),
+                pieces(*),
                 origin:containers!origin_container_id(name, sala),
                 destination:containers!destination_container_id(name, sala)
             `)
             .order('timestamp', { ascending: false })
             .limit(10);
             
+        if (error) {
+            console.error("Supabase Error en movimientos:", error);
+            return [];
+        }
         return data || [];
     } catch (e) { 
-        console.error("Recent Movements Error:", e);
+        console.error("Recent Movements Exception:", e);
         return []; 
     }
 };
@@ -81,7 +84,7 @@ window.getAllMovements = async function() {
         const { data } = await dbClient.from('movements')
             .select(`
                 *,
-                pieces(name, objeto, inventory_number_new),
+                pieces(*),
                 origin:containers!origin_container_id(name, sala),
                 destination:containers!destination_container_id(name, sala)
             `)

@@ -169,13 +169,35 @@ body {
     font-size: 1.4rem;
     font-weight: 800;
     letter-spacing: -0.5px;
-    color: white;
+    color: var(--primary); /* Cambiado a color principal para visibilidad */
     text-transform: uppercase;
 }
 
 .brand-text span {
-    color: var(--primary);
-    font-weight: 800; /* Igual grosor */
+    color: white; /* Contraste inverso */
+    font-weight: 800; 
+}
+
+/* Redondear todo */
+.glass, .panel, .stat-card, .location-card, .modal, .pin-card {
+    border-radius: var(--radius-lg) !important;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.1); /* Neutral */
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.user-avatar i {
+    width: 20px;
+    height: 20px;
 }
 
 .dashboard-panels .panel {
