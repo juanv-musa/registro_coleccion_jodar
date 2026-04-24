@@ -81,7 +81,9 @@ function showView(viewId) {
         'scanner': 'Escáner',
         'admin': 'Importación',
         'detail': 'Pieza',
-        'container-detail': 'Contenedor'
+        'container-detail': 'Contenedor',
+        'locations': 'Ubicaciones',
+        'users': 'Usuarios'
     };
     document.getElementById('view-title').innerText = titleMap[viewId] || 'ArqueoScan';
 
@@ -95,6 +97,7 @@ function showView(viewId) {
     if (viewId === 'inventory') loadInventory();
     if (viewId === 'scanner') startPieceScanner();
     if (viewId === 'admin') prepareImportView();
+    if (viewId === 'users') loadUsers();
 }
 
 async function prepareImportView() {
@@ -645,8 +648,9 @@ function setupEventListeners() {
         btn.onclick = () => showView('dashboard');
     });
 
-    // Formulario de nueva ubicación
+    // Formulario de nueva ubicación y usuario
     safeListener('form-add-container', 'submit', handleAddContainer);
+    safeListener('form-add-user', 'submit', handleAddUser);
 
     // Toggle Sidebar para móvil
     safeOnClick('btn-menu-toggle', () => {
@@ -703,6 +707,99 @@ window.showEditLocationModal = async function(id) {
     } catch (err) {
         console.error(err);
         alert("Error al cargar la ubicación para editar.");
+    }
+};
+
+// --- USUARIOS / OPERATORS ---
+async function loadUsers() {
+    try {
+        const users = await getAllOperators();
+        renderUsersGrid(users);
+    } catch (err) {
+        console.error("Error cargando usuarios:", err);
+    }
+}
+
+function renderUsersGrid(users) {
+    const list = document.getElementById('users-list');
+    if (!list) return;
+
+    if (!users || users.length === 0) {
+        list.innerHTML = '<div class="glass p-2"><p class="empty-state">No hay usuarios creados.</p></div>';
+        return;
+    }
+
+    list.innerHTML = users.map(u => `
+        <div class="location-card glass">
+            <div class="location-info">
+                <h3><i data-lucide="${u.role === 'admin' ? 'shield' : 'user'}" style="margin-right: 0.5rem; vertical-align: middle;"></i> ${u.name}</h3>
+                <p>Rol: ${u.role === 'admin' ? 'Administrador' : 'Operario'}</p>
+                <div class="location-stats">
+                    <span class="badge ${u.active ? '' : 'gold'}">${u.active ? 'Activo' : 'Inactivo'}</span>
+                </div>
+            </div>
+            <div class="location-actions">
+                <button class="btn-icon" onclick="window.toggleUserStatus('${u.id}', ${!u.active})" title="${u.active ? 'Desactivar' : 'Activar'}">
+                    <i data-lucide="${u.active ? 'user-x' : 'user-check'}"></i>
+                </button>
+                <button class="btn-icon" onclick="window.deleteUser('${u.id}')" title="Eliminar permanentemente">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    if (window.lucide) window.lucide.createIcons();
+}
+
+window.showAddUserModal = function() {
+    document.getElementById('modal-user-title').innerText = "Nuevo Usuario";
+    document.getElementById('btn-submit-user').innerText = "Crear Usuario";
+    document.getElementById('edit-user-id').value = "";
+    document.getElementById('form-add-user').reset();
+    document.getElementById('add-user-modal').style.display = 'flex';
+};
+
+window.closeAddUserModal = function() {
+    document.getElementById('add-user-modal').style.display = 'none';
+    document.getElementById('form-add-user').reset();
+};
+
+async function handleAddUser(e) {
+    e.preventDefault();
+    const userData = {
+        name: document.getElementById('new-user-name').value,
+        pin: document.getElementById('new-user-pin').value,
+        role: document.getElementById('new-user-role').value,
+        active: true
+    };
+    
+    try {
+        await createOperator(userData);
+        alert("Usuario guardado con éxito");
+        window.closeAddUserModal();
+        loadUsers();
+    } catch(err) {
+        alert("Error al guardar usuario: " + err.message);
+    }
+}
+
+window.toggleUserStatus = async function(id, status) {
+    try {
+        await updateOperator(id, { active: status });
+        loadUsers();
+    } catch(err) {
+        alert("Error: " + err.message);
+    }
+};
+
+window.deleteUser = async function(id) {
+    if (!confirm("¿Seguro que quieres borrar este usuario? Esta acción no se puede deshacer.")) return;
+    try {
+        await deleteOperator(id);
+        loadUsers();
+    } catch(err) {
+        alert("Error al eliminar: " + err.message);
     }
 };
 

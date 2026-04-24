@@ -178,3 +178,31 @@ window.getContainerById = async function(id) {
     const { data } = await dbClient.from('containers').select('*, pieces(*)').eq('id', id).single();
     return data;
 };
+
+// --- USUARIOS / OPERADORES ---
+window.getAllOperators = async function() {
+    if (!dbClient) return [];
+    const { data } = await dbClient.from('operators').select('*').order('name');
+    return data || [];
+};
+
+window.createOperator = async function(operatorData) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    const { data, error } = await dbClient.from('operators').insert([operatorData]);
+    if (error) throw error;
+    return data;
+};
+
+window.updateOperator = async function(id, updates) {
+    if (!dbClient) throw new Error("No hay conexión");
+    const { error } = await dbClient.from('operators').update(updates).eq('id', id);
+    if (error) throw error;
+    return true;
+};
+
+window.deleteOperator = async function(id) {
+    if (!dbClient) throw new Error("No hay conexión");
+    const { error } = await dbClient.from('operators').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+};

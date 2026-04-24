@@ -1267,8 +1267,8 @@ th[onclick]:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .container-piece-img, .container-piece-img-placeholder {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     border-radius: var(--radius);
     object-fit: cover;
     flex-shrink: 0;
@@ -1285,8 +1285,9 @@ th[onclick]:hover {
     overflow: hidden;
 }
 .container-piece-info h4 {
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.5rem 0;
     color: var(--text-dark);
+    font-size: 1.1rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1294,7 +1295,7 @@ th[onclick]:hover {
 .container-piece-info p {
     margin: 0;
     color: var(--text-light);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
 }
 .pieces-scroll-list {
     max-height: 60vh;
