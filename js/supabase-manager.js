@@ -32,18 +32,78 @@ window.initSupabase = function() {
 // --- FUNCIONES DE DATOS ---
 
 window.getDashboardStats = async function() {
-    if (!dbClient) return { totalPieces: 0, totalContainers: 0, movementsToday: 0 };
+    if (!dbClient) return { totalPieces: 0, movementsToday: 0, activeRoom: "-" };
     try {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
         const { count: p } = await dbClient.from('pieces').select('*', { count: 'exact', head: true });
-        const { count: c } = await dbClient.from('containers').select('*', { count: 'exact', head: true });
-        return { totalPieces: p || 0, totalContainers: c || 0, movementsToday: 0 };
-    } catch (e) { return { totalPieces: 0, totalContainers: 0, movementsToday: 0 }; }
+        
+        // Contar movimientos de hoy
+        const { count: m } = await dbClient.from('movements')
+            .select('*', { count: 'exact', head: true })
+            .gte('timestamp', today.toISOString());
+
+        // Intentar obtener la sala con más actividad hoy (simplificado)
+        const { data: recent } = await dbClient.from('movements')
+            .select('destination:containers!destination_container_id(sala)')
+            .gte('timestamp', today.toISOString())
+            .limit(10);
+            
+        let activeRoom = "-";
+        if (recent && recent.length > 0) {
+            const counts = {};
+            recent.forEach(r => {
+                if (r.destination?.sala) {
+                    counts[r.destination.sala] = (counts[r.destination.sala] || 0) + 1;
+                }
+            });
+            activeRoom = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "-");
+        }
+
+        return { 
+            totalPieces: p || 0, 
+            movementsToday: m || 0,
+            activeRoom: activeRoom 
+        };
+    } catch (e) { 
+        console.error("Dashboard Stats Error:", e);
+        return { totalPieces: 0, movementsToday: 0, activeRoom: "-" }; 
+    }
 };
 
 window.getRecentMovements = async function() {
     if (!dbClient) return [];
     try {
-        const { data } = await dbClient.from('movements').select('*, pieces(name)').order('timestamp', { ascending: false }).limit(5);
+        // Traer datos relacionados: pieza, origen y destino
+        const { data } = await dbClient.from('movements')
+            .select(`
+                *,
+                pieces(name, objeto),
+                origin:containers!origin_container_id(name, sala),
+                destination:containers!destination_container_id(name, sala)
+            `)
+            .order('timestamp', { ascending: false })
+            .limit(10);
+            
+        return data || [];
+    } catch (e) { 
+        console.error("Recent Movements Error:", e);
+        return []; 
+    }
+};
+
+window.getAllMovements = async function() {
+    if (!dbClient) return [];
+    try {
+        const { data } = await dbClient.from('movements')
+            .select(`
+                *,
+                pieces(name, objeto, inventory_number_new),
+                origin:containers!origin_container_id(name, sala),
+                destination:containers!destination_container_id(name, sala)
+            `)
+            .order('timestamp', { ascending: false });
         return data || [];
     } catch (e) { return []; }
 };

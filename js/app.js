@@ -189,7 +189,6 @@ function showPinError() {
 
 // --- DATA LOADING ---
 async function loadDashboardData() {
-    // Si Supabase no está listo, reintentar en 1 segundo
     if (typeof dbClient === 'undefined' || !dbClient) {
         console.log("Dashboard esperando a Supabase...");
         return;
@@ -199,6 +198,7 @@ async function loadDashboardData() {
         const stats = await getDashboardStats();
         document.getElementById('stats-total').innerText = stats.totalPieces;
         document.getElementById('stats-today').innerText = stats.movementsToday;
+        document.getElementById('stats-active-room').innerText = stats.activeRoom;
         
         const recent = await getRecentMovements();
         renderRecentMovements(recent);
@@ -214,16 +214,35 @@ function renderRecentMovements(movements) {
         return;
     }
 
-    container.innerHTML = movements.map(m => `
-        <div class="log-item">
-            <span class="log-time">${new Date(m.timestamp).toLocaleTimeString()}</span>
-            <div class="log-info">
-                <strong>${m.pieces.name}</strong>
-                <p>${m.origin_path} <i data-lucide="arrow-right"></i> ${m.destination_path}</p>
+    container.innerHTML = movements.map(m => {
+        const date = new Date(m.timestamp);
+        const day = date.getDate();
+        const month = date.toLocaleString('es-ES', { month: 'short' });
+        const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        
+        const pieceName = m.pieces?.objeto || m.pieces?.name || "Pieza desconocida";
+        const origin = m.origin?.name || "Origen";
+        const destination = m.destination?.name || "Destino";
+
+        return `
+            <div class="log-item" onclick="window.showPieceDetail('${m.piece_id}')" style="cursor: pointer;">
+                <div class="log-date-box">
+                    <span class="day">${day}</span>
+                    <span class="month">${month}</span>
+                </div>
+                <div class="log-info">
+                    <strong>${pieceName}</strong>
+                    <p>
+                        <span>${origin}</span>
+                        <i data-lucide="arrow-right"></i>
+                        <strong>${destination}</strong>
+                    </p>
+                    <small style="opacity: 0.5; font-size: 0.7rem;">${time}</small>
+                </div>
+                <span class="log-user">${m.operator_id}</span>
             </div>
-            <span class="log-user">${m.operator_id}</span>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     initLucide();
 }
 
@@ -664,24 +683,109 @@ function renderLocationsGrid(containers) {
         return;
     }
 
-    list.innerHTML = containers.map(c => `
-        <div class="location-card glass">
-            <div class="location-info">
-                <h3>${c.name || c.id}</h3>
-                <p>${c.sala || ''} > ${c.modulo || ''} > ${c.estanteria || ''}</p>
-                <small>Caja: ${c.caja || '-'}</small>
-                <div class="text-xs mono mt-1">${c.id}</div>
+    list.innerHTML = containers.map(c => {
+        const pieceCount = c.pieces ? c.pieces.length : 0;
+        return `
+            <div class="location-card glass">
+                <div class="location-qr-preview" id="qr-preview-${c.id}"></div>
+                <div class="location-info">
+                    <h3>${c.name || c.id}</h3>
+                    <p>${c.sala || ''} > ${c.modulo || ''}</p>
+                    <div class="location-stats">
+                        <span class="badge"><i data-lucide="package"></i> ${pieceCount} piezas</span>
+                    </div>
+                </div>
+                <div class="location-actions">
+                    <button class="btn-icon" onclick="showContainerDetail('${c.id}')" title="Ver contenido">
+                        <i data-lucide="eye"></i>
+                    </button>
+                    <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}', '${c.name || 'Caja'}')" title="Descargar QR">
+                        <i data-lucide="download"></i>
+                    </button>
+                </div>
             </div>
-            <div class="location-actions">
-                <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}', '${c.name || 'Caja'}')">
-                    <i data-lucide="qr-code"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
+    // Generar previews de QR (después de que el DOM exista)
+    containers.forEach(c => {
+        if (window.generateContainerQRPreview) {
+            window.generateContainerQRPreview(`qr-preview-${c.id}`, c.id);
+        }
+    });
+
     if (window.lucide) window.lucide.createIcons();
 }
+
+// --- EXPORTS ---
+function exportToCSV(filename, data) {
+    if (!data || !data.length) return;
+    
+    const headers = Object.keys(data[0]).join(';');
+    const rows = data.map(row => 
+        Object.values(row).map(val => `"${(val || '').toString().replace(/"/g, '""')}"`).join(';')
+    );
+    
+    // Usar semicolon y BOM para que Excel lo abra bien en español
+    const csvContent = "\uFEFF" + headers + "\n" + rows.join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+window.exportInventory = () => {
+    const data = state.allPieces.map(p => ({
+        "ID": p.id,
+        "Num_Inv_Nuevo": p.inventory_number_new,
+        "Num_Inv_Antiguo": p.inventory_number_old,
+        "Objeto": p.objeto || p.name,
+        "Material": p.material,
+        "Cronologia": p.chronology,
+        "Ubicacion": p.containers ? p.containers.name : "Sin ubicación",
+        "Sala": p.containers ? p.containers.sala : "-"
+    }));
+    exportToCSV("Inventario_ArqueoScan.csv", data);
+};
+
+window.exportMovements = async () => {
+    try {
+        const movements = await getAllMovements();
+        const data = movements.map(m => ({
+            "Fecha": new Date(m.timestamp).toLocaleDateString(),
+            "Hora": new Date(m.timestamp).toLocaleTimeString(),
+            "Pieza": m.pieces?.objeto || m.pieces?.name || "Desconocida",
+            "Num_Inv": m.pieces?.inventory_number_new || "-",
+            "Origen": m.origin ? `${m.origin.sala} > ${m.origin.name}` : "Origen desconocido",
+            "Destino": m.destination ? `${m.destination.sala} > ${m.destination.name}` : "Destino desconocido",
+            "Operador": m.operator_id
+        }));
+        exportToCSV("Movimientos_ArqueoScan.csv", data);
+    } catch (e) {
+        alert("Error al exportar movimientos");
+    }
+};
+
+window.exportLocations = async () => {
+    try {
+        const containers = await getAllContainers();
+        const data = containers.map(c => ({
+            "ID": c.id,
+            "Nombre": c.name,
+            "Sala": c.sala,
+            "Modulo": c.modulo,
+            "Estanteria": c.estanteria,
+            "Caja": c.caja
+        }));
+        exportToCSV("Ubicaciones_ArqueoScan.csv", data);
+    } catch (e) {
+        alert("Error al exportar ubicaciones");
+    }
+};
 
 // Global exposure
 window.loadLocations = loadLocations;

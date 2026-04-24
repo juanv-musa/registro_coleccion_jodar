@@ -139,9 +139,35 @@ function generatePieceQR(elementId, pieceId) {
     return qrCode;
 }
 
+function generateContainerQRPreview(elementId, containerId) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+    
+    container.innerHTML = ''; 
+
+    const qrCode = new QRCodeStyling({
+        width: 80,
+        height: 80,
+        type: "svg",
+        data: containerId,
+        dotsOptions: {
+            color: "#000000",
+            type: "rounded"
+        },
+        backgroundOptions: { color: "transparent" },
+        cornersSquareOptions: { type: "extra-rounded", color: "#000000" },
+        cornersDotOptions: { type: "dot", color: "#000000" },
+        qrOptions: { errorCorrectionLevel: 'M' }
+    });
+
+    qrCode.append(container);
+    return qrCode;
+}
+
 // Global exposure
 window.startScanner = startScanner;
 window.stopScanner = stopScanner;
 window.generatePieceQR = generatePieceQR;
+window.generateContainerQRPreview = generateContainerQRPreview;
 window.downloadQR = downloadQR;
 window.downloadContainerQR = downloadContainerQR;

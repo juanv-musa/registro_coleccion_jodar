@@ -41,8 +41,7 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar glass">
             <div class="logo-area">
-                <img src="assets/logo.png" alt="Musaraña" class="logo-img">
-                <span class="brand-text">Musaraña<span>Gestión</span></span>
+                <span class="brand-text">ARQUEO<span>SCAN</span></span>
             </div>
             <nav id="nav">
                 <ul>
@@ -119,7 +118,13 @@
                     
                     <div class="dashboard-panels">
                         <div class="panel glass">
-                            <h3>Últimos Movimientos</h3>
+                            <div class="panel-header">
+                                <i data-lucide="activity"></i>
+                                <h3>Actividad Reciente</h3>
+                                <button class="btn-icon ms-auto" onclick="window.exportMovements()" title="Exportar historial">
+                                    <i data-lucide="download"></i>
+                                </button>
+                            </div>
                             <div id="recent-movements-list" class="log-list">
                                 <p class="empty-state">No hay registros recientes</p>
                             </div>
@@ -129,11 +134,16 @@
 
                 <!-- Inventory View -->
                 <section id="view-inventory" class="view" style="display: none;">
-                    <div class="view-header">
-                        <div class="search-container">
+                    <div class="table-actions mb-2">
+                        <div class="search-bar glass">
                             <i data-lucide="search"></i>
-                            <input type="text" id="inventory-search" placeholder="Buscar por NIM, Objeto, Material..." oninput="window.filterInventory()">
+                            <input type="text" id="inventory-search" placeholder="Buscar pieza, nº inv, material...">
                         </div>
+                        <button class="btn-secondary" onclick="window.exportInventory()">
+                            <i data-lucide="download"></i>
+                            Exportar
+                        </button>
+                    </div>
                         <div class="header-actions">
                             <button class="btn-primary" onclick="window.loadInventory()">
                                 <i data-lucide="refresh-cw"></i>
@@ -163,11 +173,18 @@
 
                 <!-- Locations / Containers View -->
                 <section id="view-locations" class="view" style="display: none;">
-                    <div class="view-header">
-                        <h2>Árbol de Ubicaciones</h2>
-                        <button class="btn-primary" onclick="showAddContainerModal()">
-                            <i data-lucide="plus"></i> Nueva Ubicación
-                        </button>
+                    <div class="section-header">
+                        <h2>Ubicaciones y Contenedores</h2>
+                        <div class="header-actions">
+                            <button class="btn-secondary" onclick="window.exportLocations()">
+                                <i data-lucide="download"></i>
+                                Exportar
+                            </button>
+                            <button class="btn-gold" onclick="showAddContainerModal()">
+                                <i data-lucide="plus"></i>
+                                Nueva Ubicación
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="locations-grid" id="locations-list">
