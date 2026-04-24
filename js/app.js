@@ -459,12 +459,20 @@ async function showContainerDetail(id) {
         if (pieces.length === 0) {
             list.innerHTML = '<p class="empty-state">Este contenedor está vacío.</p>';
         } else {
-            list.innerHTML = pieces.map(p => `
-                <div class="piece-mini-card glass clickable-piece" data-id="${p.id}">
-                    <strong>${p.name}</strong>
-                    <span class="mono">${p.inventory_number_new}</span>
+            list.innerHTML = pieces.map(p => {
+                const imgTag = p.image_url 
+                    ? `<img src="${p.image_url}" class="container-piece-img" alt="Foto">` 
+                    : `<div class="container-piece-img-placeholder"><i data-lucide="image"></i></div>`;
+                return `
+                <div class="container-piece-item clickable-piece" data-id="${p.id}">
+                    ${imgTag}
+                    <div class="container-piece-info">
+                        <h4>${p.objeto || p.name || 'Sin nombre'}</h4>
+                        <p><strong>Nº Inv:</strong> <span class="mono">${p.inventory_number_new || p.id}</span></p>
+                    </div>
+                    <i data-lucide="chevron-right" style="color:var(--primary);"></i>
                 </div>
-            `).join('');
+            `}).join('');
             
             list.querySelectorAll('.clickable-piece').forEach(el => {
                 el.onclick = () => showPieceDetail(el.dataset.id);

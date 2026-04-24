@@ -335,6 +335,23 @@
                     </div>
                 </section>
 
+                <!-- Container Detail View -->
+                <section id="view-container-detail" class="view" style="display: none;">
+                    <div class="detail-header mb-2">
+                        <button class="btn-text" onclick="showView('locations')"><i data-lucide="chevron-left"></i> Volver</button>
+                    </div>
+                    <div class="section-header">
+                        <h2 id="cont-detail-name">Nombre de la Caja</h2>
+                        <p id="cont-detail-path" class="text-muted">Ruta completa</p>
+                    </div>
+                    <div class="glass p-2">
+                        <h3 id="cont-piece-count">0 Piezas dentro</h3>
+                        <div id="cont-pieces-list" class="pieces-scroll-list">
+                            <!-- JS will populate -->
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Users View -->
                 <section id="view-users" class="view" style="display: none;">
                     <div class="section-header">
