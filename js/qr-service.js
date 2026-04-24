@@ -27,6 +27,9 @@ function startScanner(elementId, onScanSuccess) {
         supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
         videoConstraints: {
             facingMode: { exact: "environment" } // Obliga a usar la cámara trasera
+        },
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
         }
     };
 
@@ -92,29 +95,60 @@ function downloadQR(qrInstance, filename = "qr-pieza") {
 
 function downloadContainerQR(containerId, name = "Caja") {
     const qrCode = new QRCodeStyling({
-        width: 400, // Aumentar tamaño base
-        height: 400,
+        width: 600, // Aumentar resolución del archivo generado
+        height: 600,
         type: "svg",
         data: containerId,
         image: "assets/logo.png",
         dotsOptions: { 
-            color: "#332211", // Café muy oscuro para máximo contraste (mejor que el dorado claro)
-            type: "square" // Cuadrados son más fáciles de leer por sensores antiguos
+            color: "#000000", // Negro puro para máximo contraste absoluto
+            type: "square" 
         },
         backgroundOptions: { color: "#ffffff" },
         imageOptions: { 
             crossOrigin: "anonymous", 
-            margin: 10, // Más margen para que el logo no tape datos críticos
-            imageSize: 0.3 // Logo un poco más pequeño
+            margin: 15, // Más margen de seguridad
+            imageSize: 0.15 // Logo mucho más pequeño (15% vs 30%) para no tapar datos
         },
-        cornersSquareOptions: { type: "square", color: "#332211" },
-        cornersDotOptions: { type: "square", color: "#332211" },
+        cornersSquareOptions: { type: "square", color: "#000000" },
+        cornersDotOptions: { type: "square", color: "#000000" },
         qrOptions: {
-            errorCorrectionLevel: 'H' // Nivel de corrección alto para compensar el logo
+            errorCorrectionLevel: 'H' // Máxima redundancia
         }
     });
 
     qrCode.download({ name: `QR-${name}-${containerId}`, extension: "png" });
+}
+
+function generatePieceQR(elementId, pieceId) {
+    const container = document.getElementById(elementId);
+    if (!container) return;
+    
+    container.innerHTML = ''; 
+
+    const qrCode = new QRCodeStyling({
+        width: 250,
+        height: 250,
+        type: "svg",
+        data: pieceId,
+        image: "assets/logo.png",
+        dotsOptions: {
+            color: "#000000", // Negro para piezas también, por seguridad
+            type: "square"
+        },
+        backgroundOptions: { color: "#ffffff" },
+        imageOptions: {
+            crossOrigin: "anonymous",
+            margin: 10,
+            imageSize: 0.15
+        },
+        cornersSquareOptions: { type: "square", color: "#000000" },
+        cornersDotOptions: { type: "square", color: "#000000" },
+        qrOptions: { errorCorrectionLevel: 'H' }
+    });
+
+    qrCode.append(container);
+    return qrCode;
 }
 
 // Global exposure
