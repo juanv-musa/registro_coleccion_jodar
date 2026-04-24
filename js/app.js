@@ -478,7 +478,10 @@ async function showContainerDetail(id) {
             `}).join('');
             
             list.querySelectorAll('.clickable-piece').forEach(el => {
-                el.onclick = () => showPieceDetail(el.dataset.id);
+                el.onclick = () => {
+                    state.previousView = 'container-detail';
+                    showPieceDetail(el.dataset.id);
+                };
             });
         }
         
@@ -556,7 +559,14 @@ function setupEventListeners() {
     
     safeOnClick('btn-logout', showPINOverlay);
     safeOnClick('btn-sync', loadDashboardData);
-    safeOnClick('btn-back-to-inventory', () => showView('inventory'));
+    safeOnClick('btn-back-to-inventory', () => {
+        if (state.previousView === 'container-detail') {
+            state.previousView = null;
+            showView('container-detail');
+        } else {
+            showView('inventory');
+        }
+    });
     safeOnClick('btn-print-qr', () => { if(window.printPieceQR) window.printPieceQR(); });
 
     // El buscador ya tiene oninput en el HTML llamando a window.filterInventory()
@@ -732,13 +742,15 @@ function renderUsersGrid(users) {
     list.innerHTML = users.map(u => `
         <div class="location-card glass">
             <div class="location-info">
-                <h3><i data-lucide="${u.role === 'admin' ? 'shield' : 'user'}" style="margin-right: 0.5rem; vertical-align: middle;"></i> ${u.name}</h3>
-                <p>Rol: ${u.role === 'admin' ? 'Administrador' : 'Operario'}</p>
+                <h3><i data-lucide="user" style="margin-right: 0.5rem; vertical-align: middle;"></i> ${u.name}</h3>
                 <div class="location-stats">
                     <span class="badge ${u.active ? '' : 'gold'}">${u.active ? 'Activo' : 'Inactivo'}</span>
                 </div>
             </div>
             <div class="location-actions">
+                <button class="btn-icon" onclick="window.editUser('${u.id}')" title="Editar">
+                    <i data-lucide="edit-3"></i>
+                </button>
                 <button class="btn-icon" onclick="window.toggleUserStatus('${u.id}', ${!u.active})" title="${u.active ? 'Desactivar' : 'Activar'}">
                     <i data-lucide="${u.active ? 'user-x' : 'user-check'}"></i>
                 </button>
@@ -767,22 +779,48 @@ window.closeAddUserModal = function() {
 
 async function handleAddUser(e) {
     e.preventDefault();
+    const isEdit = !!document.getElementById('edit-user-id').value;
+    const userId = document.getElementById('edit-user-id').value;
+    
+    // NOTA: Eliminamos 'role' temporalmente porque la tabla de Supabase no tiene esa columna creada.
     const userData = {
         name: document.getElementById('new-user-name').value,
         pin: document.getElementById('new-user-pin').value,
-        role: document.getElementById('new-user-role').value,
         active: true
     };
     
     try {
-        await createOperator(userData);
-        alert("Usuario guardado con éxito");
+        if (isEdit) {
+            await updateOperator(userId, userData);
+            alert("Usuario actualizado con éxito.");
+        } else {
+            await createOperator(userData);
+            alert("Usuario guardado con éxito.");
+        }
         window.closeAddUserModal();
         loadUsers();
     } catch(err) {
         alert("Error al guardar usuario: " + err.message);
     }
 }
+
+window.editUser = async function(id) {
+    try {
+        const users = await getAllOperators();
+        const user = users.find(u => u.id === id || u.id === parseInt(id));
+        if (!user) return;
+        
+        document.getElementById('modal-user-title').innerText = "Editar Usuario";
+        document.getElementById('btn-submit-user').innerText = "Guardar Cambios";
+        document.getElementById('edit-user-id').value = user.id;
+        document.getElementById('new-user-name').value = user.name;
+        document.getElementById('new-user-pin').value = user.pin;
+        
+        document.getElementById('add-user-modal').style.display = 'flex';
+    } catch(e) {
+        console.error(e);
+    }
+};
 
 window.toggleUserStatus = async function(id, status) {
     try {
