@@ -140,13 +140,11 @@
                                 <i data-lucide="download"></i>
                                 Exportar
                             </button>
-                            <button class="btn-outline" onclick="window.printFilteredPieces()">
+                            <button class="btn-outline" onclick="window.printFilteredPieces()" title="Imprimir Etiquetas">
                                 <i data-lucide="printer"></i>
-                                Imprimir Etiquetas
                             </button>
-                            <button class="btn-primary" onclick="window.loadInventory()">
+                            <button class="btn-primary" onclick="window.loadInventory()" title="Actualizar">
                                 <i data-lucide="refresh-cw"></i>
-                                <span>Actualizar</span>
                             </button>
                         </div>
                     </div>
@@ -185,9 +183,8 @@
                                 <i data-lucide="download"></i>
                                 Exportar
                             </button>
-                            <button class="btn-outline" onclick="window.printFilteredLocations()">
+                            <button class="btn-outline" onclick="window.printFilteredLocations()" title="Imprimir Etiquetas">
                                 <i data-lucide="printer"></i>
-                                Imprimir Etiquetas
                             </button>
                             <button class="btn-gold" onclick="showAddContainerModal()">
                                 <i data-lucide="plus"></i>
@@ -267,7 +264,7 @@
                         <div class="detail-side glass">
                             <h3>QR de la Pieza</h3>
                             <div id="piece-qr-display" class="qr-container"></div>
-                            <button id="btn-print-qr" class="btn-outline w-100">Imprimir QR Pieza <i data-lucide="printer"></i></button>
+                            <button id="btn-print-qr" class="btn-outline w-100" title="Imprimir QR Pieza"><i data-lucide="printer"></i></button>
                         </div>
                     </div>
                 </section>

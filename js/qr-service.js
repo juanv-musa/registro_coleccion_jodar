@@ -235,22 +235,22 @@ window.printPieceQR = function() {
     printWindow.document.close();
 };
 
-const bulkPrintStyles = \`
+const bulkPrintStyles = `
     @page { size: A4; margin: 10mm; }
     body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5mm; background: #fff;}
-\`;
+`;
 
 window.printFilteredPieces = function() {
     const pieces = state.filteredPieces || state.allPieces;
     if (!pieces || pieces.length === 0) return;
     
     const printWindow = window.open('', '_blank');
-    let html = \`
+    let html = `
         <html>
             <head>
                 <title>Imprimir Etiquetas Piezas</title>
                 <style>
-                    \${bulkPrintStyles}
+                    ${bulkPrintStyles}
                     .label { 
                         width: 45mm; height: 20mm; 
                         border: 1px dashed #ccc; 
@@ -264,26 +264,26 @@ window.printFilteredPieces = function() {
                     .inv { font-size: 8pt; font-weight: bold; margin-bottom: 1mm; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;}
                     .title { font-size: 6pt; line-height: 1.2; max-height: 14pt; overflow: hidden; }
                 </style>
-                <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\\/script>
+                <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\/script>
             </head>
             <body>
-    \`;
+    `;
     
     pieces.forEach(p => {
-        html += \`
+        html += `
             <div class="label">
-                <div id="qr-\${p.id}" class="qr-box"></div>
+                <div id="qr-${p.id}" class="qr-box"></div>
                 <div class="info">
-                    <div class="inv">\${p.inventory_number_new || p.id}</div>
-                    <div class="title">\${p.objeto || p.name || 'Sin nombre'}</div>
+                    <div class="inv">${p.inventory_number_new || p.id}</div>
+                    <div class="title">${p.objeto || p.name || 'Sin nombre'}</div>
                 </div>
             </div>
-        \`;
+        `;
     });
 
-    html += \`
+    html += `
             <script>
-                const pieces = \${JSON.stringify(pieces.map(p => p.id))};
+                const pieces = ${JSON.stringify(pieces.map(p => p.id))};
                 pieces.forEach(id => {
                     const qr = new QRCodeStyling({
                         width: 100, height: 100, type: "svg", data: id,
@@ -293,10 +293,10 @@ window.printFilteredPieces = function() {
                     qr.append(document.getElementById("qr-" + id));
                 });
                 setTimeout(() => { window.print(); }, 1500);
-            <\\/script>
+            <\/script>
             </body>
         </html>
-    \`;
+    `;
     printWindow.document.write(html);
     printWindow.document.close();
 };
@@ -306,12 +306,12 @@ window.printFilteredLocations = function() {
     if (!locations || locations.length === 0) return;
     
     const printWindow = window.open('', '_blank');
-    let html = \`
+    let html = `
         <html>
             <head>
                 <title>Imprimir Etiquetas Ubicaciones</title>
                 <style>
-                    \${bulkPrintStyles}
+                    ${bulkPrintStyles}
                     .label { 
                         width: 60mm; height: 35mm; 
                         border: 1px dashed #ccc; 
@@ -322,23 +322,23 @@ window.printFilteredLocations = function() {
                     .qr-box svg { width: 100%; height: 100%; }
                     .title { font-size: 10pt; font-weight: bold; text-align: center; line-height: 1.1; max-height: 22pt; overflow: hidden;}
                 </style>
-                <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\\/script>
+                <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\/script>
             </head>
             <body>
-    \`;
+    `;
     
     locations.forEach(c => {
-        html += \`
+        html += `
             <div class="label">
-                <div id="qr-\${c.id}" class="qr-box"></div>
-                <div class="title">\${c.name || 'Caja'}</div>
+                <div id="qr-${c.id}" class="qr-box"></div>
+                <div class="title">${c.name || 'Caja'}</div>
             </div>
-        \`;
+        `;
     });
 
-    html += \`
+    html += `
             <script>
-                const locs = \${JSON.stringify(locations.map(c => c.id))};
+                const locs = ${JSON.stringify(locations.map(c => c.id))};
                 locs.forEach(id => {
                     const qr = new QRCodeStyling({
                         width: 150, height: 150, type: "svg", data: id,
@@ -348,10 +348,10 @@ window.printFilteredLocations = function() {
                     qr.append(document.getElementById("qr-" + id));
                 });
                 setTimeout(() => { window.print(); }, 1500);
-            <\\/script>
+            <\/script>
             </body>
         </html>
-    \`;
+    `;
     printWindow.document.write(html);
     printWindow.document.close();
 };
