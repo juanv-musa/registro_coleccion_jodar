@@ -109,8 +109,8 @@ function downloadContainerQR(containerId, name = "Caja") {
                         display: flex; flex-direction: column; align-items: center; justify-content: center;
                         border: 1px dashed #ccc; /* Para guía de corte si hace falta */
                     }
-                    .qr-box { width: 22mm; height: 22mm; margin-bottom: 2mm; }
-                    .qr-box svg { width: 100%; height: 100%; }
+                    .qr-box { width: 22mm; height: 22mm; margin-bottom: 2mm; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                    .qr-box svg { width: 22mm !important; height: 22mm !important; }
                     .title { font-size: 10pt; font-weight: bold; text-align: center; line-height: 1.1; max-height: 22pt; overflow: hidden;}
                 </style>
                 <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\/script>
@@ -122,8 +122,8 @@ function downloadContainerQR(containerId, name = "Caja") {
                 </div>
                 <script>
                     const qrCode = new QRCodeStyling({
-                        width: 500, height: 500, type: "svg", data: "${containerId}",
-                        dotsOptions: { color: "#000", type: "square" },
+                        width: 300, height: 300, type: "svg", data: "${containerId}",
+                        dotsOptions: { color: "#000", type: "rounded" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qrCode.append(document.getElementById("qr-canvas"));
@@ -204,8 +204,8 @@ window.printPieceQR = function() {
                         overflow: hidden;
                         border: 1px dashed #ccc; /* Guía de corte */
                     }
-                    .qr-box { width: 10mm; height: 10mm; flex-shrink: 0; }
-                    .qr-box svg { width: 100%; height: 100%; }
+                    .qr-box { width: 10mm; height: 10mm; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                    .qr-box svg { width: 10mm !important; height: 10mm !important; }
                     .info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
                     .inv { font-size: 8pt; font-weight: bold; margin-bottom: 1mm; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;}
                     .title { font-size: 6pt; line-height: 1.2; max-height: 14pt; overflow: hidden; }
@@ -222,8 +222,8 @@ window.printPieceQR = function() {
                 </div>
                 <script>
                     const qrCode = new QRCodeStyling({
-                        width: 500, height: 500, type: "svg", data: "${p.id}",
-                        dotsOptions: { color: "#000", type: "square" },
+                        width: 300, height: 300, type: "svg", data: "${p.id}",
+                        dotsOptions: { color: "#000", type: "rounded" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qrCode.append(document.getElementById("qr-canvas"));
@@ -258,8 +258,8 @@ window.printFilteredPieces = function() {
                         display: flex; align-items: center; gap: 3mm;
                         overflow: hidden;
                     }
-                    .qr-box { width: 10mm; height: 10mm; flex-shrink: 0; }
-                    .qr-box svg { width: 100%; height: 100%; }
+                    .qr-box { width: 10mm; height: 10mm; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                    .qr-box svg { width: 10mm !important; height: 10mm !important; }
                     .info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
                     .inv { font-size: 8pt; font-weight: bold; margin-bottom: 1mm; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;}
                     .title { font-size: 6pt; line-height: 1.2; max-height: 14pt; overflow: hidden; }
@@ -286,8 +286,8 @@ window.printFilteredPieces = function() {
                 const pieces = ${JSON.stringify(pieces.map(p => p.id))};
                 pieces.forEach(id => {
                     const qr = new QRCodeStyling({
-                        width: 500, height: 500, type: "svg", data: id,
-                        dotsOptions: { color: "#000", type: "square" },
+                        width: 300, height: 300, type: "svg", data: id,
+                        dotsOptions: { color: "#000", type: "rounded" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qr.append(document.getElementById("qr-" + id));
@@ -318,8 +318,8 @@ window.printFilteredLocations = function() {
                         padding: 3mm; box-sizing: border-box; 
                         display: flex; flex-direction: column; align-items: center; justify-content: center;
                     }
-                    .qr-box { width: 22mm; height: 22mm; margin-bottom: 2mm; }
-                    .qr-box svg { width: 100%; height: 100%; }
+                    .qr-box { width: 22mm; height: 22mm; margin-bottom: 2mm; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                    .qr-box svg { width: 22mm !important; height: 22mm !important; }
                     .title { font-size: 10pt; font-weight: bold; text-align: center; line-height: 1.1; max-height: 22pt; overflow: hidden;}
                 </style>
                 <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\/script>
@@ -341,8 +341,8 @@ window.printFilteredLocations = function() {
                 const locs = ${JSON.stringify(locations.map(c => c.id))};
                 locs.forEach(id => {
                     const qr = new QRCodeStyling({
-                        width: 500, height: 500, type: "svg", data: id,
-                        dotsOptions: { color: "#000", type: "square" },
+                        width: 300, height: 300, type: "svg", data: id,
+                        dotsOptions: { color: "#000", type: "rounded" },
                         qrOptions: { errorCorrectionLevel: 'M' }
                     });
                     qr.append(document.getElementById("qr-" + id));
