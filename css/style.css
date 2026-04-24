@@ -131,14 +131,16 @@ body {
 }
 
 .brand-text {
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
     letter-spacing: -0.5px;
-    color: #929497; /* Gray from logo */
+    color: #4A4A4A;
+    text-transform: uppercase;
 }
 
 .brand-text span {
-    color: var(--primary); /* Lime green from logo */
+    color: #8DBE23;
+    font-weight: 800;
 }
 
 #nav ul {
@@ -163,19 +165,6 @@ body {
     cursor: pointer;
     border-radius: var(--radius-md);
     transition: all 0.3s ease;
-}
-
-.brand-text {
-    font-size: 1.4rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--primary); /* Cambiado a color principal para visibilidad */
-    text-transform: uppercase;
-}
-
-.brand-text span {
-    color: white; /* Contraste inverso */
-    font-weight: 800; 
 }
 
 /* Redondear todo */
@@ -230,6 +219,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 5px;
 }
 
 .log-item {
@@ -613,6 +605,14 @@ tr:hover td {
 .brand-text span {
     color: var(--primary);
     font-weight: 400;
+}
+
+/* QR Container */
+.qr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
 /* Overlay & PIN */

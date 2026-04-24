@@ -73,7 +73,7 @@ function mapToSupabase(data, containerId) {
         const objetoVal = getVal(['OBJETO', 'OBJETO ', 'TIPO', 'DESCRIPCIÓN BREVE', 'CLASE DE OBJETO']);
         const objeto = (objetoVal && objetoVal.toString().trim()) ? objetoVal.toString().trim() : name;
 
-        return {
+        const pieceData = {
             id: pieceId,
             inventory_number_new: (getVal(['NUMERACIÓN', 'Nº INV']) || pieceId).toString().trim(),
             inventory_number_old: getVal(['NIM', 'Nº ANTERIOR', 'NIM/Nº INV. ANTERIOR']),
@@ -92,7 +92,6 @@ function mapToSupabase(data, containerId) {
             conservation: getVal(['CONSERVACIÓN']) || null,
             cataloger: getVal(['CATALOGADORA/DOR', 'CATALOGADOR']) || null,
             cataloging_date: getVal(['FECHA DE CATALOGACIÓN', 'FECHA']) || null,
-            container_id: containerId || null,
             image_url: (() => {
                 const foto = getVal(['FOTO', 'foto', 'Foto', 'IMAGEN']);
                 if (!foto) {
@@ -104,6 +103,12 @@ function mapToSupabase(data, containerId) {
             })(),
             updated_at: new Date()
         };
+        
+        if (containerId) {
+            pieceData.container_id = containerId;
+        }
+
+        return pieceData;
     });
 }
 

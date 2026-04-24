@@ -16,7 +16,8 @@ const state = {
     },
     tempImportData: [],
     moveMode: false,
-    targetContainer: null
+    targetContainer: null,
+    filteredPieces: null
 };
 
 // --- INITIALIZATION ---
@@ -321,6 +322,7 @@ function filterInventory() {
         
         return searchStr.includes(query);
     });
+    state.filteredPieces = filtered;
     renderInventoryTable(filtered);
 }
 
@@ -359,10 +361,11 @@ async function showPieceDetail(id) {
         const c = p.containers || {};
         
         // El título principal es el Objeto, el secundario es la Denominación
-        document.getElementById('detail-name').innerText = p.objeto || p.name || 'Sin nombre';
+        const mainTitle = p.objeto || p.name || 'Sin nombre';
+        document.getElementById('detail-name').innerText = mainTitle;
         const denEl = document.getElementById('detail-denominacion');
         if (denEl) {
-            denEl.innerText = (p.objeto && p.name && p.objeto !== p.name) ? `Denominación: ${p.name}` : '';
+            denEl.innerText = (p.name && p.name !== mainTitle && p.name !== 'Sin nombre') ? `Denominación: ${p.name}` : '';
         }
         
         document.getElementById('detail-inv-new').innerText = p.inventory_number_new || p.id;
@@ -541,6 +544,7 @@ function setupEventListeners() {
     safeOnClick('btn-logout', showPINOverlay);
     safeOnClick('btn-sync', loadDashboardData);
     safeOnClick('btn-back-to-inventory', () => showView('inventory'));
+    safeOnClick('btn-print-qr', () => { if(window.printPieceQR) window.printPieceQR(); });
 
     // El buscador ya tiene oninput en el HTML llamando a window.filterInventory()
     // Eliminamos el listener redundante aquí para evitar conflictos.
@@ -799,7 +803,8 @@ function exportToCSV(filename, data) {
 }
 
 window.exportInventory = () => {
-    const data = state.allPieces.map(p => ({
+    const piecesToExport = state.filteredPieces || state.allPieces;
+    const data = piecesToExport.map(p => ({
         "ID": p.id,
         "Num_Inv_Nuevo": p.inventory_number_new,
         "Num_Inv_Antiguo": p.inventory_number_old,
