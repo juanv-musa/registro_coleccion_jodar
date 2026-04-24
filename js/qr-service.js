@@ -79,8 +79,26 @@ function downloadQR(qrInstance, filename = "qr-pieza") {
     qrInstance.download({ name: filename, extension: "png" });
 }
 
+function downloadContainerQR(containerId, name = "Caja") {
+    const qrCode = new QRCodeStyling({
+        width: 300,
+        height: 300,
+        type: "svg",
+        data: containerId,
+        image: "assets/logo.png",
+        dotsOptions: { color: "#C69C6D", type: "rounded" }, // Color dorado para cajas
+        backgroundOptions: { color: "#ffffff" },
+        imageOptions: { crossOrigin: "anonymous", margin: 5 },
+        cornersSquareOptions: { type: "extra-rounded", color: "#C69C6D" },
+        cornersDotOptions: { type: "dot", color: "#C69C6D" }
+    });
+
+    qrCode.download({ name: `QR-${name}-${containerId}`, extension: "png" });
+}
+
 // Global exposure
 window.startScanner = startScanner;
 window.stopScanner = stopScanner;
 window.generatePieceQR = generatePieceQR;
 window.downloadQR = downloadQR;
+window.downloadContainerQR = downloadContainerQR;

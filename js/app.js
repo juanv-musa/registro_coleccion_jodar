@@ -585,12 +585,13 @@ function renderLocationsGrid(containers) {
     list.innerHTML = containers.map(c => `
         <div class="location-card glass">
             <div class="location-info">
-                <h3>${c.id}</h3>
+                <h3>${c.name || c.id}</h3>
                 <p>${c.sala || ''} > ${c.modulo || ''} > ${c.estanteria || ''}</p>
                 <small>Caja: ${c.caja || '-'}</small>
+                <div class="text-xs mono mt-1">${c.id}</div>
             </div>
             <div class="location-actions">
-                <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}')">
+                <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}', '${c.name || 'Caja'}')">
                     <i data-lucide="qr-code"></i>
                 </button>
             </div>
