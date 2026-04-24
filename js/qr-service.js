@@ -95,25 +95,19 @@ function downloadQR(qrInstance, filename = "qr-pieza") {
 
 function downloadContainerQR(containerId, name = "Caja") {
     const qrCode = new QRCodeStyling({
-        width: 600, // Aumentar resolución del archivo generado
+        width: 600,
         height: 600,
         type: "svg",
         data: containerId,
-        image: "assets/logo.png",
         dotsOptions: { 
-            color: "#000000", // Negro puro para máximo contraste absoluto
-            type: "square" 
+            color: "#000000", 
+            type: "rounded"
         },
         backgroundOptions: { color: "#ffffff" },
-        imageOptions: { 
-            crossOrigin: "anonymous", 
-            margin: 15, // Más margen de seguridad
-            imageSize: 0.15 // Logo mucho más pequeño (15% vs 30%) para no tapar datos
-        },
-        cornersSquareOptions: { type: "square", color: "#000000" },
-        cornersDotOptions: { type: "square", color: "#000000" },
+        cornersSquareOptions: { type: "extra-rounded", color: "#000000" },
+        cornersDotOptions: { type: "dot", color: "#000000" },
         qrOptions: {
-            errorCorrectionLevel: 'H' // Máxima redundancia
+            errorCorrectionLevel: 'M' // Bajamos a M para que el patrón sea más simple ahora que no hay logo
         }
     });
 
@@ -131,20 +125,14 @@ function generatePieceQR(elementId, pieceId) {
         height: 250,
         type: "svg",
         data: pieceId,
-        image: "assets/logo.png",
         dotsOptions: {
-            color: "#000000", // Negro para piezas también, por seguridad
-            type: "square"
+            color: "#8DBE23", 
+            type: "rounded"
         },
         backgroundOptions: { color: "#ffffff" },
-        imageOptions: {
-            crossOrigin: "anonymous",
-            margin: 10,
-            imageSize: 0.15
-        },
-        cornersSquareOptions: { type: "square", color: "#000000" },
-        cornersDotOptions: { type: "square", color: "#000000" },
-        qrOptions: { errorCorrectionLevel: 'H' }
+        cornersSquareOptions: { type: "extra-rounded", color: "#8DBE23" },
+        cornersDotOptions: { type: "dot", color: "#8DBE23" },
+        qrOptions: { errorCorrectionLevel: 'M' }
     });
 
     qrCode.append(container);
