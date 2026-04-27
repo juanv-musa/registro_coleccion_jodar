@@ -120,7 +120,20 @@ body {
 .logo-area {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    padding: 0.5rem 0;
+}
+
+.sidebar-logo {
+    width: 160px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(141, 190, 35, 0.15));
+    transition: filter 0.3s ease;
+}
+
+.sidebar-logo:hover {
+    filter: drop-shadow(0 4px 16px rgba(141, 190, 35, 0.35));
 }
 
 .logo-img {
@@ -639,9 +652,12 @@ tr:hover td {
 }
 
 .pin-logo {
-    width: 200px;
-    margin-bottom: 2rem;
-    filter: drop-shadow(0 0 15px rgba(141, 190, 35, 0.4));
+    width: 180px;
+    height: auto;
+    margin: 0 auto 1.5rem;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 16px rgba(141, 190, 35, 0.25));
 }
 
 .pin-display {
@@ -1306,4 +1322,396 @@ th[onclick]:hover {
     gap: 0.75rem;
     margin-top: 1rem;
     padding-right: 0.5rem;
+}
+
+/* ===== v0.0.2 — SISTEMA DE UBICACIONES MEJORADO ===== */
+
+/* --- Barra de filtros chips --- */
+.location-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: 50px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-chip i { width: 14px; height: 14px; }
+
+.filter-chip:hover {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    background: rgba(141, 190, 35, 0.06);
+}
+
+.filter-chip.active {
+    background: var(--primary);
+    color: #1a1a1a;
+    border-color: var(--primary);
+}
+
+.filter-chip.sm {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+}
+
+.filter-sep {
+    color: var(--border);
+    font-size: 1.2rem;
+    line-height: 1;
+    user-select: none;
+}
+
+/* --- Tarjeta de ubicación rediseñada --- */
+.location-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+}
+
+.location-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.location-type-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.location-type-icon i { width: 22px; height: 22px; }
+
+.location-type-icon.almacen {
+    background: rgba(141, 190, 35, 0.12);
+    color: var(--primary-dark);
+}
+
+.location-type-icon.exposicion {
+    background: rgba(74, 20, 140, 0.1);
+    color: #6A1B9A;
+}
+
+.location-type-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.type-badge-space,
+.type-badge-cont {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+}
+
+.type-badge-space.almacen {
+    background: rgba(141, 190, 35, 0.12);
+    color: var(--primary-dark);
+    border: 1px solid rgba(141, 190, 35, 0.25);
+}
+
+.type-badge-space.exposicion {
+    background: rgba(74, 20, 140, 0.1);
+    color: #6A1B9A;
+    border: 1px solid rgba(74, 20, 140, 0.2);
+}
+
+.type-badge-cont {
+    background: rgba(0,0,0,0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.location-sala {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+}
+
+.location-subpath {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* --- Modal rediseñado: selector de tipo de espacio --- */
+.modal-wide {
+    max-width: 560px !important;
+}
+
+.space-type-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.space-type-option {
+    display: flex;
+    cursor: pointer;
+}
+
+.space-type-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.space-type-option span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.space-type-option span i { width: 22px; height: 22px; }
+
+.space-type-option input[type="radio"]:checked + span {
+    border-color: var(--primary);
+    background: rgba(141, 190, 35, 0.08);
+    color: var(--primary-dark);
+}
+
+.space-type-option:hover span {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+/* --- Grid de subtipo de contenedor --- */
+.container-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.5rem;
+}
+
+.cont-type-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.5rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.cont-type-option i { width: 18px; height: 18px; }
+
+.cont-type-option:hover {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    background: rgba(141, 190, 35, 0.06);
+}
+
+.cont-type-option.selected {
+    border-color: var(--primary);
+    background: rgba(141, 190, 35, 0.1);
+    color: var(--primary-dark);
+}
+
+/* --- Vista detalle de sala (room-detail) --- */
+.room-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    border-radius: var(--radius-lg);
+}
+
+.room-type-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(141, 190, 35, 0.12);
+    color: var(--primary-dark);
+}
+
+.room-type-icon i { width: 28px; height: 28px; }
+
+.room-detail-info { flex: 1; }
+
+.room-type-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.35rem;
+}
+
+.room-type-label.almacen {
+    background: rgba(141, 190, 35, 0.12);
+    color: var(--primary-dark);
+}
+
+.room-type-label.exposicion {
+    background: rgba(74, 20, 140, 0.1);
+    color: #6A1B9A;
+}
+
+.room-detail-info h2 { font-size: 1.6rem; font-weight: 800; }
+
+/* --- Acordeón de contenedores en la sala --- */
+.accordion-item {
+    border-radius: var(--radius-md) !important;
+    overflow: hidden;
+}
+
+.accordion-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    transition: background 0.2s ease;
+}
+
+.accordion-header:hover { background: rgba(0,0,0,0.02); }
+
+.accordion-header.open { border-bottom: 1px solid var(--border); }
+
+.accordion-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.accordion-header-left i { width: 18px; height: 18px; color: var(--primary-dark); }
+
+.accordion-type-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.05);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+}
+
+.accordion-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-muted);
+}
+
+.accordion-arrow { width: 16px; height: 16px; }
+
+.accordion-body {
+    display: none;
+    flex-direction: column;
+}
+
+.accordion-body.open { display: flex; }
+
+/* --- Piezas dentro del acordeón de sala --- */
+.room-piece-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1.5rem;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.room-piece-item:hover { background: rgba(141, 190, 35, 0.04); }
+
+.room-piece-name {
+    flex: 1;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Detalle de contenedor rediseñado --- */
+.container-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    border-radius: var(--radius-lg);
+}
+
+.cont-type-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(141, 190, 35, 0.1);
+    color: var(--primary-dark);
+}
+
+.cont-type-icon i { width: 26px; height: 26px; }
+
+.cont-type-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    background: rgba(141, 190, 35, 0.12);
+    color: var(--primary-dark);
+    margin-bottom: 0.3rem;
 }

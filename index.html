@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Musaraña | Gestión de Reserva Arqueológica</title>
+    <title>ArqueoScan | Gestión de Reserva Arqueológica</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +45,7 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar glass">
             <div class="logo-area">
-                <span class="brand-text">ARQUEO<span>SCAN</span></span>
+                <img src="assets/logo.png" alt="ArqueoScan Logo" class="sidebar-logo">
             </div>
             <nav id="nav">
                 <ul>
@@ -82,7 +86,7 @@
                 <button id="btn-logout" title="Salir"><i data-lucide="log-out"></i></button>
             </div>
             <div class="sidebar-footer">
-                <span class="version-tag">Musaraña 2026 | v2.2.0</span>
+                <span class="version-tag">Musaraña 2026 | v0.0.2</span>
             </div>
         </aside>
 
@@ -174,10 +178,10 @@
 
                 <!-- Locations / Containers View -->
                 <section id="view-locations" class="view" style="display: none;">
-                    <div class="table-actions mb-2" style="justify-content: space-between;">
-                        <div class="search-bar glass" style="max-width: 300px; padding: 0.75rem 1.5rem; flex: 1;">
+                    <div class="table-actions mb-2" style="justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+                        <div class="search-bar glass" style="max-width: 280px; padding: 0.75rem 1.25rem; flex: 1;">
                             <i data-lucide="search"></i>
-                            <input type="text" id="locations-search" placeholder="Buscar..." oninput="window.filterLocations()">
+                            <input type="text" id="locations-search" placeholder="Buscar ubicación..." oninput="window.filterLocations()">
                         </div>
                         <div class="header-actions">
                             <button class="btn-secondary" onclick="window.exportLocations()">
@@ -192,6 +196,24 @@
                                 Nueva Ubicación
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Filtros por tipo de espacio -->
+                    <div class="location-filter-bar mb-2">
+                        <button class="filter-chip active" data-filter="all" onclick="window.setLocationFilter('all', this)">
+                            <i data-lucide="layers"></i> Todos
+                        </button>
+                        <button class="filter-chip" data-filter="almacen" onclick="window.setLocationFilter('almacen', this)">
+                            <i data-lucide="warehouse"></i> Almacén
+                        </button>
+                        <button class="filter-chip" data-filter="exposicion" onclick="window.setLocationFilter('exposicion', this)">
+                            <i data-lucide="landmark"></i> Exposición
+                        </button>
+                        <span class="filter-sep">|</span>
+                        <button class="filter-chip sm" data-subfilter="caja" onclick="window.setSubtypeFilter('caja', this)"><i data-lucide="package"></i> Caja</button>
+                        <button class="filter-chip sm" data-subfilter="pale" onclick="window.setSubtypeFilter('pale', this)"><i data-lucide="pallet"></i> Palé</button>
+                        <button class="filter-chip sm" data-subfilter="vitrina" onclick="window.setSubtypeFilter('vitrina', this)"><i data-lucide="picture-in-picture"></i> Vitrina</button>
+                        <button class="filter-chip sm" data-subfilter="peana" onclick="window.setSubtypeFilter('peana', this)"><i data-lucide="cylinder"></i> Peana</button>
                     </div>
                     
                     <div class="locations-grid" id="locations-list">
@@ -270,22 +292,23 @@
                     </div>
                 </section>
 
-                <!-- Container Detail View -->
-                <section id="view-container-detail" class="view" style="display: none;">
-                    <div class="detail-header">
-                        <button class="btn-text btn-back-dashboard"><i data-lucide="chevron-left"></i> Volver</button>
+                <!-- Container Detail View (primer bloque, se reemplaza con el correcto de abajo) -->
+                <!-- Room/Sala Detail View (NUEVO) -->
+                <section id="view-room-detail" class="view" style="display: none;">
+                    <div class="detail-header mb-2">
+                        <button class="btn-text" onclick="showView('locations')"><i data-lucide="chevron-left"></i> Volver a Ubicaciones</button>
+                        <button class="btn-outline" id="btn-print-room-qr" title="Imprimir QR de esta Sala"><i data-lucide="printer"></i> QR Sala</button>
                     </div>
-                    <div class="container-detail-grid">
-                        <div class="glass p-2">
-                            <h2 id="cont-detail-name">Nombre del Contenedor</h2>
-                            <p id="cont-detail-path" class="text-muted">SALA > MODULO > ...</p>
-                            <div class="cont-stats">
-                                <span class="badge" id="cont-piece-count">0 Piezas dentro</span>
-                            </div>
-                            <div class="inner-pieces-list" id="cont-pieces-list">
-                                <!-- List of pieces inside -->
-                            </div>
+                    <div class="room-detail-header glass mb-2">
+                        <div class="room-type-icon" id="room-type-icon"><i data-lucide="warehouse"></i></div>
+                        <div class="room-detail-info">
+                            <span class="room-type-label" id="room-type-label">Almacén</span>
+                            <h2 id="room-detail-name">Nombre de la Sala</h2>
+                            <p class="text-muted" id="room-detail-stats">0 contenedores · 0 piezas</p>
                         </div>
+                    </div>
+                    <div id="room-containers-accordion">
+                        <!-- Acordeón de contenedores con sus piezas, generado por JS -->
                     </div>
                 </section>
 
@@ -335,14 +358,18 @@
                 <!-- Container Detail View -->
                 <section id="view-container-detail" class="view" style="display: none;">
                     <div class="detail-header mb-2">
-                        <button class="btn-text" onclick="showView('locations')"><i data-lucide="chevron-left"></i> Volver</button>
+                        <button class="btn-text" id="btn-back-from-container"><i data-lucide="chevron-left"></i> Volver</button>
                     </div>
-                    <div class="section-header">
-                        <h2 id="cont-detail-name">Nombre de la Caja</h2>
-                        <p id="cont-detail-path" class="text-muted">Ruta completa</p>
+                    <div class="container-detail-header glass mb-2">
+                        <div class="cont-type-icon" id="cont-type-icon"><i data-lucide="package"></i></div>
+                        <div>
+                            <span class="cont-type-label" id="cont-type-label">Caja</span>
+                            <h2 id="cont-detail-name">Nombre del Contenedor</h2>
+                            <p id="cont-detail-path" class="text-muted">Sala > Módulo > Estantería</p>
+                        </div>
                     </div>
                     <div class="glass p-2">
-                        <h3 id="cont-piece-count">0 Piezas dentro</h3>
+                        <h3 id="cont-piece-count" style="margin-bottom:1rem;">0 Piezas dentro</h3>
                         <div id="cont-pieces-list" class="pieces-scroll-list">
                             <!-- JS will populate -->
                         </div>
@@ -370,7 +397,7 @@
     <!-- PIN Access Overlay -->
     <div id="pin-overlay" class="overlay">
         <div class="pin-card glass">
-            <div class="brand-text mb-2">ARQUEO<span>SCAN</span></div>
+            <img src="assets/logo.png" alt="ArqueoScan" class="pin-logo">
             <h2>Acceso Autorizado</h2>
             <p>Introduce tu PIN para identificarte</p>
             <div class="pin-display">
@@ -426,33 +453,71 @@
         </div>
     </div>
 
-    <!-- Add Container Modal -->
+    <!-- Add Container Modal (Rediseñado v0.0.2) -->
     <div id="add-container-modal" class="modal-overlay" style="display: none;">
-        <div class="modal glass">
+        <div class="modal glass modal-wide">
             <h2 id="modal-container-title">Nueva Ubicación</h2>
             <form id="form-add-container" class="mt-2">
                 <input type="hidden" id="edit-cont-id" value="">
+
+                <!-- Tipo de espacio -->
                 <div class="form-group mb-1">
-                    <label>Nombre / ID Caja</label>
-                    <input type="text" id="new-cont-name" class="glass-input" placeholder="Ej: Caja 42" required>
+                    <label>Tipo de Espacio</label>
+                    <div class="space-type-selector">
+                        <label class="space-type-option" id="opt-almacen-label">
+                            <input type="radio" name="space-type" id="space-type-almacen" value="almacen" checked onchange="window.onSpaceTypeChange('almacen')">
+                            <span>
+                                <i data-lucide="warehouse"></i>
+                                Almacén
+                            </span>
+                        </label>
+                        <label class="space-type-option" id="opt-exposicion-label">
+                            <input type="radio" name="space-type" id="space-type-exposicion" value="exposicion" onchange="window.onSpaceTypeChange('exposicion')">
+                            <span>
+                                <i data-lucide="landmark"></i>
+                                Exposición
+                            </span>
+                        </label>
+                    </div>
                 </div>
+
+                <!-- Nombre de la sala/espacio -->
                 <div class="form-group mb-1">
-                    <label>Sala</label>
-                    <input type="text" id="new-cont-sala" class="glass-input" placeholder="Ej: Almacén A" required>
+                    <label>Sala / Habitación</label>
+                    <input type="text" id="new-cont-sala" class="glass-input" placeholder="Ej: Almacén Norte, Sala 3" required>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group mb-1">
-                        <label>Módulo</label>
-                        <input type="text" id="new-cont-modulo" class="glass-input" placeholder="M-1">
+
+                <!-- Subtipo de contenedor -->
+                <div class="form-group mb-1">
+                    <label>Tipo de Contenedor</label>
+                    <div class="container-type-grid" id="container-type-grid">
+                        <!-- Se rellena dinámicamente por JS según el tipo de espacio -->
+                    </div>
+                    <input type="hidden" id="new-cont-type" value="caja">
+                </div>
+
+                <!-- Nombre del contenedor -->
+                <div class="form-group mb-1">
+                    <label>Nombre / ID del Contenedor</label>
+                    <input type="text" id="new-cont-name" class="glass-input" placeholder="Ej: Caja 42, Vitrina Centro" required>
+                </div>
+
+                <!-- Campos de jerarquía — solo Almacén -->
+                <div id="almacen-hierarchy-fields">
+                    <div class="grid-2">
+                        <div class="form-group mb-1">
+                            <label>Módulo <span class="text-muted" style="font-size:0.75rem;">(opcional)</span></label>
+                            <input type="text" id="new-cont-modulo" class="glass-input" placeholder="M-1">
+                        </div>
+                        <div class="form-group mb-1">
+                            <label>Estantería <span class="text-muted" style="font-size:0.75rem;">(opcional)</span></label>
+                            <input type="text" id="new-cont-estanteria" class="glass-input" placeholder="E-3">
+                        </div>
                     </div>
                     <div class="form-group mb-1">
-                        <label>Estantería</label>
-                        <input type="text" id="new-cont-estanteria" class="glass-input" placeholder="E-3">
+                        <label>Balda <span class="text-muted" style="font-size:0.75rem;">(opcional)</span></label>
+                        <input type="text" id="new-cont-balda" class="glass-input" placeholder="Ej: B-2">
                     </div>
-                </div>
-                <div class="form-group mb-1">
-                    <label>Balda, Suelo, Pared, Palé, Peana, Vitrina</label>
-                    <input type="text" id="new-cont-balda" class="glass-input" placeholder="Ej: Suelo, Vitrina 1...">
                 </div>
                 
                 <div class="modal-actions mt-2">

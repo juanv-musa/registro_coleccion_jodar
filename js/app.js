@@ -7,6 +7,8 @@ const state = {
     currentUser: null,
     currentView: 'dashboard',
     currentPiece: null,
+    currentContainer: null,
+    currentRoom: null,
     pinBuffer: "",
     allPieces: [],
     stats: {
@@ -19,7 +21,10 @@ const state = {
     targetContainer: null,
     filteredPieces: null,
     allLocations: [],
-    filteredLocations: null
+    filteredLocations: null,
+    locationTypeFilter: 'all',
+    locationSubtypeFilter: null,
+    previousContainerView: null   // para saber si volver a la sala o a la lista
 };
 
 // --- INITIALIZATION ---
@@ -436,6 +441,10 @@ function startPieceScanner() {
 function handleUniversalScan(id) {
     if (id.startsWith('P-')) {
         showPieceDetail(id);
+    } else if (id.startsWith('S-')) {
+        // QR de sala/habitación
+        const salaSlug = id.replace('S-', '');
+        showRoomDetailBySlug(salaSlug);
     } else if (id.startsWith('C-')) {
         if (state.moveMode) {
             handleDestinationScanned(id);
@@ -443,7 +452,7 @@ function handleUniversalScan(id) {
             showContainerDetail(id);
         }
     } else {
-        alert("Código QR no reconocido como pieza o contenedor.");
+        alert("Código QR no reconocido. Asegúrate de escanear un QR de ArqueoScan.");
     }
 }
 
@@ -452,11 +461,24 @@ async function showContainerDetail(id) {
         const container = await getContainerById(id);
         state.currentContainer = container;
         
+        // Icono y tipo según container_type
+        const typeInfo = getContainerTypeInfo(container.container_type || 'caja');
+        const iconEl = document.getElementById('cont-type-icon');
+        const labelEl = document.getElementById('cont-type-label');
+        if (iconEl) iconEl.innerHTML = `<i data-lucide="${typeInfo.icon}"></i>`;
+        if (labelEl) labelEl.innerText = typeInfo.label;
+
         document.getElementById('cont-detail-name').innerText = container.name;
-        document.getElementById('cont-detail-path').innerText = `${container.sala} > ${container.modulo} > ${container.estanteria} > ${container.caja}`;
+        
+        // Ruta según tipo de espacio
+        let pathParts = [container.sala];
+        if (container.modulo) pathParts.push(container.modulo);
+        if (container.estanteria) pathParts.push(container.estanteria);
+        if (container.balda) pathParts.push(container.balda);
+        document.getElementById('cont-detail-path').innerText = pathParts.join(' > ');
         
         const pieces = container.pieces || [];
-        document.getElementById('cont-piece-count').innerText = `${pieces.length} Piezas dentro`;
+        document.getElementById('cont-piece-count').innerText = `${pieces.length} Pieza${pieces.length !== 1 ? 's' : ''} dentro`;
         
         const list = document.getElementById('cont-pieces-list');
         if (pieces.length === 0) {
@@ -486,6 +508,7 @@ async function showContainerDetail(id) {
         }
         
         showView('container-detail');
+        if (window.lucide) window.lucide.createIcons();
     } catch (err) {
         alert("Error al cargar contenedor: " + err.message);
     }
@@ -568,6 +591,24 @@ function setupEventListeners() {
         }
     });
     safeOnClick('btn-print-qr', () => { if(window.printPieceQR) window.printPieceQR(); });
+
+    // Volver desde detalle de contenedor: a sala si venimos de ahí, si no a ubicaciones
+    safeOnClick('btn-back-from-container', () => {
+        if (state.previousContainerView === 'room') {
+            state.previousContainerView = null;
+            showView('room-detail');
+        } else {
+            showView('locations');
+        }
+    });
+
+    // Imprimir QR de sala
+    safeOnClick('btn-print-room-qr', () => {
+        if (state.currentRoom) {
+            const slug = state.currentRoom.sala.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            window.printRoomQR(slug, state.currentRoom.sala, state.currentRoom.space_type);
+        }
+    });
 
     // El buscador ya tiene oninput en el HTML llamando a window.filterInventory()
     // Eliminamos el listener redundante aquí para evitar conflictos.
@@ -846,23 +887,28 @@ async function handleAddContainer(e) {
     
     const editId = document.getElementById('edit-cont-id').value;
     const isEdit = !!editId;
+    const contType = document.getElementById('new-cont-type').value || 'caja';
+    const spaceTypeEl = document.querySelector('input[name="space-type"]:checked');
+    const spaceType = spaceTypeEl ? spaceTypeEl.value : 'almacen';
 
     const containerData = {
         id: isEdit ? editId : `C-${Date.now()}`,
         name: document.getElementById('new-cont-name').value,
         sala: document.getElementById('new-cont-sala').value,
-        modulo: document.getElementById('new-cont-modulo').value || null,
-        estanteria: document.getElementById('new-cont-estanteria').value || null,
-        balda: document.getElementById('new-cont-balda').value || null,
+        space_type: spaceType,
+        container_type: contType,
+        modulo: document.getElementById('new-cont-modulo')?.value || null,
+        estanteria: document.getElementById('new-cont-estanteria')?.value || null,
+        balda: document.getElementById('new-cont-balda')?.value || null,
         caja: document.getElementById('new-cont-name').value || null,
         updated_at: new Date()
     };
 
     try {
-        await createContainer(containerData); // upsert handles both create and update
+        await createContainer(containerData);
         alert(isEdit ? "Ubicación actualizada con éxito" : "Ubicación creada con éxito");
         closeAddContainerModal();
-        loadLocations(); // Recargar la lista
+        loadLocations();
     } catch (err) {
         console.error(err);
         const msg = err && typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err);
@@ -909,24 +955,45 @@ function renderLocationsGrid(containers) {
 
     list.innerHTML = containers.map(c => {
         const pieceCount = c.pieces ? c.pieces.length : 0;
+        const typeInfo = getContainerTypeInfo(c.container_type || 'caja');
+        const spaceLabel = c.space_type === 'exposicion' ? 'Exposición' : 'Almacén';
+        const spaceClass = c.space_type === 'exposicion' ? 'exposicion' : 'almacen';
+        
+        // Ruta corta
+        let pathParts = [];
+        if (c.modulo) pathParts.push(c.modulo);
+        if (c.estanteria) pathParts.push(c.estanteria);
+        if (c.balda) pathParts.push(c.balda);
+        const subpath = pathParts.join(' > ');
+
         return `
-            <div class="location-card glass">
+            <div class="location-card glass" data-space-type="${c.space_type || 'almacen'}" data-container-type="${c.container_type || 'caja'}">
+                <div class="location-card-top">
+                    <div class="location-type-icon ${spaceClass}">
+                        <i data-lucide="${typeInfo.icon}"></i>
+                    </div>
+                    <div class="location-type-badges">
+                        <span class="type-badge-space ${spaceClass}">${spaceLabel}</span>
+                        <span class="type-badge-cont">${typeInfo.label}</span>
+                    </div>
+                </div>
                 <div class="location-qr-preview" id="qr-preview-${c.id}"></div>
                 <div class="location-info">
                     <h3>${c.name || c.id}</h3>
-                    <p>${c.sala || ''} > ${c.modulo || ''}</p>
+                    <p class="location-sala">${c.sala || ''}</p>
+                    ${subpath ? `<p class="location-subpath">${subpath}</p>` : ''}
                     <div class="location-stats">
-                        <span class="badge"><i data-lucide="package"></i> ${pieceCount} piezas</span>
+                        <span class="badge"><i data-lucide="gem"></i> ${pieceCount} pieza${pieceCount !== 1 ? 's' : ''}</span>
                     </div>
                 </div>
                 <div class="location-actions">
                     <button class="btn-icon" onclick="window.showEditLocationModal('${c.id}')" title="Editar">
                         <i data-lucide="edit-3"></i>
                     </button>
-                    <button class="btn-icon" onclick="showContainerDetail('${c.id}')" title="Ver contenido">
+                    <button class="btn-icon" onclick="showContainerDetail('${c.id}')" title="Ver piezas">
                         <i data-lucide="eye"></i>
                     </button>
-                    <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}', '${c.name || 'Caja'}')" title="Descargar QR">
+                    <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}', '${(c.name || 'Caja').replace(/'/g, "\\'")}}')" title="Descargar QR">
                         <i data-lucide="download"></i>
                     </button>
                 </div>
@@ -934,7 +1001,7 @@ function renderLocationsGrid(containers) {
         `;
     }).join('');
     
-    // Generar previews de QR (después de que el DOM exista)
+    // Generar previews de QR
     containers.forEach(c => {
         if (window.generateContainerQRPreview) {
             window.generateContainerQRPreview(`qr-preview-${c.id}`, c.id);
@@ -942,6 +1009,76 @@ function renderLocationsGrid(containers) {
     });
 
     if (window.lucide) window.lucide.createIcons();
+}
+
+// --- HELPERS DE TIPO DE CONTENEDOR ---
+function getContainerTypeInfo(type) {
+    const map = {
+        'caja':       { icon: 'package',           label: 'Caja' },
+        'balda':      { icon: 'layout-list',        label: 'Balda' },
+        'estanteria': { icon: 'server',             label: 'Estantería' },
+        'modulo':     { icon: 'grid-2x2',           label: 'Módulo' },
+        'pale':       { icon: 'pallet',             label: 'Palé' },
+        'vitrina':    { icon: 'picture-in-picture', label: 'Vitrina' },
+        'peana':      { icon: 'cylinder',           label: 'Peana' },
+        'pared':      { icon: 'image',              label: 'Pared' },
+    };
+    return map[type] || map['caja'];
+}
+
+// --- FILTROS DE UBICACIONES ---
+window.setLocationFilter = function(type, btn) {
+    state.locationTypeFilter = type;
+    state.locationSubtypeFilter = null;
+    
+    // Limpiar chips de tipo principal
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    
+    // Desactivar subtype chips
+    document.querySelectorAll('.filter-chip[data-subfilter]').forEach(c => c.classList.remove('active'));
+    
+    applyLocationFilters();
+};
+
+window.setSubtypeFilter = function(subtype, btn) {
+    // Toggle: si ya está activo, desactiva
+    if (state.locationSubtypeFilter === subtype) {
+        state.locationSubtypeFilter = null;
+        if (btn) btn.classList.remove('active');
+    } else {
+        state.locationSubtypeFilter = subtype;
+        document.querySelectorAll('.filter-chip[data-subfilter]').forEach(c => c.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+    }
+    applyLocationFilters();
+};
+
+function applyLocationFilters() {
+    const query = (document.getElementById('locations-search')?.value || '').toLowerCase().trim();
+    let filtered = state.allLocations;
+
+    // Filtro por tipo de espacio
+    if (state.locationTypeFilter && state.locationTypeFilter !== 'all') {
+        filtered = filtered.filter(c => (c.space_type || 'almacen') === state.locationTypeFilter);
+    }
+
+    // Filtro por subtipo de contenedor
+    if (state.locationSubtypeFilter) {
+        filtered = filtered.filter(c => (c.container_type || 'caja') === state.locationSubtypeFilter);
+    }
+
+    // Filtro de búsqueda textual
+    if (query) {
+        filtered = filtered.filter(c => {
+            const str = [c.name, c.sala, c.modulo, c.estanteria, c.container_type, c.space_type]
+                .map(v => (v||'').toString().toLowerCase()).join(' ');
+            return str.includes(query);
+        });
+    }
+
+    state.filteredLocations = filtered;
+    renderLocationsGrid(filtered);
 }
 
 // --- EXPORTS ---
@@ -1017,8 +1154,241 @@ window.exportLocations = async () => {
 
 // Global exposure
 window.loadLocations = loadLocations;
+window.showPieceDetail = showPieceDetail;
+window.showContainerDetail = showContainerDetail;
 
-// Modificar showView para incluir la nueva vista
+// Reemplazar filterLocations para usar el sistema unificado
+window.filterLocations = function() {
+    applyLocationFilters();
+};
+
+// --- MODAL DE UBICACIÓN — LÓGICA DINÁMICA ---
+
+const CONTAINER_TYPES = {
+    almacen:   [
+        { value: 'caja',       icon: 'package',      label: 'Caja' },
+        { value: 'balda',      icon: 'layout-list',  label: 'Balda' },
+        { value: 'estanteria', icon: 'server',        label: 'Estantería' },
+        { value: 'modulo',     icon: 'grid-2x2',      label: 'Módulo' },
+        { value: 'pale',       icon: 'pallet',        label: 'Palé' },
+    ],
+    exposicion: [
+        { value: 'vitrina',    icon: 'picture-in-picture', label: 'Vitrina' },
+        { value: 'peana',      icon: 'cylinder',      label: 'Peana' },
+        { value: 'pared',      icon: 'image',         label: 'Pared' },
+    ]
+};
+
+window.onSpaceTypeChange = function(spaceType) {
+    renderContainerTypeOptions(spaceType);
+    // Mostrar/ocultar campos de jerarquía sólo para almacén
+    const hierarchyFields = document.getElementById('almacen-hierarchy-fields');
+    if (hierarchyFields) {
+        hierarchyFields.style.display = spaceType === 'almacen' ? 'block' : 'none';
+    }
+};
+
+function renderContainerTypeOptions(spaceType) {
+    const grid = document.getElementById('container-type-grid');
+    if (!grid) return;
+
+    const options = CONTAINER_TYPES[spaceType] || CONTAINER_TYPES.almacen;
+    const currentValue = document.getElementById('new-cont-type')?.value || options[0].value;
+
+    grid.innerHTML = options.map(opt => `
+        <label class="cont-type-option ${currentValue === opt.value ? 'selected' : ''}" 
+               onclick="window.selectContainerType('${opt.value}', this)">
+            <i data-lucide="${opt.icon}"></i>
+            <span>${opt.label}</span>
+        </label>
+    `).join('');
+
+    // Asegurar que el hidden input tenga el primer valor si no coincide
+    if (!options.find(o => o.value === currentValue)) {
+        const hiddenInput = document.getElementById('new-cont-type');
+        if (hiddenInput) hiddenInput.value = options[0].value;
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+window.selectContainerType = function(type, el) {
+    document.getElementById('new-cont-type').value = type;
+    document.querySelectorAll('.cont-type-option').forEach(o => o.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+};
+
+// Sobrescribir showAddContainerModal para inicializar el nuevo modal
+window.showAddContainerModal = function() {
+    document.getElementById('modal-container-title').innerText = 'Nueva Ubicación';
+    document.getElementById('btn-submit-container').innerText = 'Crear Ubicación';
+    document.getElementById('edit-cont-id').value = '';
+    document.getElementById('form-add-container').reset();
+    // Radio por defecto: almacén
+    const radioAlmacen = document.getElementById('space-type-almacen');
+    if (radioAlmacen) radioAlmacen.checked = true;
+    // Inicializar opciones de subtipo
+    renderContainerTypeOptions('almacen');
+    // Mostrar campos de jerarquía
+    const hierarchyFields = document.getElementById('almacen-hierarchy-fields');
+    if (hierarchyFields) hierarchyFields.style.display = 'block';
+    document.getElementById('add-container-modal').style.display = 'flex';
+    if (window.lucide) window.lucide.createIcons();
+};
+
+// Sobrescribir showEditLocationModal para rellenar el nuevo modal
+window.showEditLocationModal = async function(id) {
+    try {
+        const container = await getContainerById(id);
+        if (!container) throw new Error('No se encontró la ubicación');
+
+        const spaceType = container.space_type || 'almacen';
+
+        document.getElementById('edit-cont-id').value = container.id;
+        document.getElementById('new-cont-sala').value = container.sala || '';
+        document.getElementById('new-cont-name').value = container.name || '';
+        if (document.getElementById('new-cont-modulo')) document.getElementById('new-cont-modulo').value = container.modulo || '';
+        if (document.getElementById('new-cont-estanteria')) document.getElementById('new-cont-estanteria').value = container.estanteria || '';
+        if (document.getElementById('new-cont-balda')) document.getElementById('new-cont-balda').value = container.balda || '';
+
+        // Tipo de espacio
+        const radioEl = document.getElementById(`space-type-${spaceType}`);
+        if (radioEl) radioEl.checked = true;
+
+        // Tipo de contenedor: pre-seleccionar
+        const hiddenType = document.getElementById('new-cont-type');
+        if (hiddenType) hiddenType.value = container.container_type || 'caja';
+
+        renderContainerTypeOptions(spaceType);
+
+        // Campos de jerarquía
+        const hierarchyFields = document.getElementById('almacen-hierarchy-fields');
+        if (hierarchyFields) hierarchyFields.style.display = spaceType === 'almacen' ? 'block' : 'none';
+
+        document.getElementById('modal-container-title').innerText = 'Editar Ubicación';
+        document.getElementById('btn-submit-container').innerText = 'Guardar Cambios';
+        document.getElementById('add-container-modal').style.display = 'flex';
+        if (window.lucide) window.lucide.createIcons();
+    } catch (err) {
+        console.error(err);
+        alert('Error al cargar la ubicación para editar.');
+    }
+};
+
+// --- DETALLE DE SALA (desde escaneo QR con prefijo S-) ---
+
+/**
+ * Muestra el detalle de una sala dado su slug (nombre sin espacios ni caracteres especiales)
+ */
+async function showRoomDetailBySlug(salaSlug) {
+    try {
+        // Obtener todos los contenedores y buscar los que pertenecen a esa sala
+        const allContainers = await getAllContainers();
+        
+        // Buscar la sala por slug del nombre
+        const matchingContainers = allContainers.filter(c => {
+            const slug = (c.sala || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            return slug === salaSlug;
+        });
+
+        if (matchingContainers.length === 0) {
+            alert(`No se encontró la sala con QR: S-${salaSlug}`);
+            return;
+        }
+
+        const salaName = matchingContainers[0].sala;
+        const spaceType = matchingContainers[0].space_type || 'almacen';
+
+        // Obtener datos completos de los contenedores con piezas
+        const containersWithPieces = await getPiecesBySala(salaName);
+
+        state.currentRoom = { sala: salaName, space_type: spaceType, containers: containersWithPieces };
+
+        renderRoomDetail(state.currentRoom);
+        showView('room-detail');
+    } catch (err) {
+        console.error(err);
+        alert('Error al cargar la sala: ' + err.message);
+    }
+}
+
+function renderRoomDetail(room) {
+    const nameEl = document.getElementById('room-detail-name');
+    const labelEl = document.getElementById('room-type-label');
+    const iconEl = document.getElementById('room-type-icon');
+    const statsEl = document.getElementById('room-detail-stats');
+    const accordion = document.getElementById('room-containers-accordion');
+
+    if (!nameEl || !accordion) return;
+
+    nameEl.innerText = room.sala;
+
+    const isExpo = room.space_type === 'exposicion';
+    labelEl.innerText = isExpo ? 'Sala de Exposición' : 'Almacén';
+    labelEl.className = `room-type-label ${isExpo ? 'exposicion' : 'almacen'}`;
+    iconEl.innerHTML = `<i data-lucide="${isExpo ? 'landmark' : 'warehouse'}"></i>`;
+
+    const containers = room.containers || [];
+    const totalPieces = containers.reduce((sum, c) => sum + (c.pieces || []).length, 0);
+    statsEl.innerText = `${containers.length} contenedor${containers.length !== 1 ? 'es' : ''} · ${totalPieces} pieza${totalPieces !== 1 ? 's' : ''}`;
+
+    if (containers.length === 0) {
+        accordion.innerHTML = '<div class="glass p-2"><p class="empty-state">Esta sala no tiene contenedores registrados.</p></div>';
+        if (window.lucide) window.lucide.createIcons();
+        return;
+    }
+
+    accordion.innerHTML = containers.map((c, idx) => {
+        const pieces = c.pieces || [];
+        const typeInfo = getContainerTypeInfo(c.container_type || 'caja');
+        const isOpen = idx === 0; // el primero abierto por defecto
+
+        const piecesHtml = pieces.length === 0
+            ? '<p class="empty-state" style="padding: 0.75rem 1rem;">Contenedor vacío</p>'
+            : pieces.map(p => `
+                <div class="room-piece-item" onclick="window.showPieceDetail('${p.id}')">
+                    <span class="badge-id">${p.inventory_number_new || p.id}</span>
+                    <span class="room-piece-name">${p.objeto || p.name || 'Sin nombre'}</span>
+                    <i data-lucide="chevron-right" style="color:var(--primary);flex-shrink:0;"></i>
+                </div>
+            `).join('');
+
+        return `
+            <div class="accordion-item glass mb-1">
+                <button class="accordion-header ${isOpen ? 'open' : ''}" onclick="window.toggleAccordion(this)">
+                    <div class="accordion-header-left">
+                        <i data-lucide="${typeInfo.icon}"></i>
+                        <strong>${c.name}</strong>
+                        <span class="accordion-type-label">${typeInfo.label}</span>
+                    </div>
+                    <div class="accordion-header-right">
+                        <span class="badge">${pieces.length} pieza${pieces.length !== 1 ? 's' : ''}</span>
+                        <i data-lucide="${isOpen ? 'chevron-up' : 'chevron-down'}" class="accordion-arrow"></i>
+                    </div>
+                </button>
+                <div class="accordion-body ${isOpen ? 'open' : ''}">
+                    ${piecesHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+window.toggleAccordion = function(headerBtn) {
+    const body = headerBtn.nextElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    headerBtn.classList.toggle('open', !isOpen);
+    const arrowIcon = headerBtn.querySelector('.accordion-arrow');
+    if (arrowIcon) {
+        arrowIcon.setAttribute('data-lucide', isOpen ? 'chevron-down' : 'chevron-up');
+        if (window.lucide) window.lucide.createIcons();
+    }
+};
+
+// Modificar showView para incluir la vista room-detail
 const originalShowView = window.showView;
 window.showView = (viewId, loadData = true) => {
     if (originalShowView) originalShowView(viewId, loadData);

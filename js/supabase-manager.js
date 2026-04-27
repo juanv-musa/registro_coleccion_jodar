@@ -101,8 +101,7 @@ window.getAllPieces = async function() {
 
 window.getAllContainers = async function() {
     if (!dbClient) return [];
-    // Pedimos también las piezas asociadas (solo el ID para no sobrecargar)
-    const { data } = await dbClient.from('containers').select('*, pieces(id)');
+    const { data } = await dbClient.from('containers').select('*, pieces(id, objeto, name, inventory_number_new, image_url)').order('sala').order('name');
     return data || [];
 };
 
@@ -205,4 +204,63 @@ window.deleteOperator = async function(id) {
     const { error } = await dbClient.from('operators').delete().eq('id', id);
     if (error) throw error;
     return true;
+};
+
+// --- SALAS / ROOMS ---
+
+/**
+ * Obtiene todas las piezas que están en contenedores de una sala específica.
+ * Agrupa los contenedores de esa sala con sus piezas.
+ */
+window.getPiecesBySala = async function(sala) {
+    if (!dbClient) return [];
+    try {
+        const { data, error } = await dbClient
+            .from('containers')
+            .select('*, pieces(id, objeto, name, inventory_number_new, image_url, material)')
+            .eq('sala', sala)
+            .order('name');
+        if (error) throw error;
+        return data || [];
+    } catch(e) {
+        console.error('getPiecesBySala error:', e);
+        return [];
+    }
+};
+
+/**
+ * Obtiene los grupos de salas únicas con sus conteos de contenedores y piezas.
+ * Devuelve un array de { sala, space_type, containerCount, pieceCount, containers }
+ */
+window.getAllRooms = async function() {
+    if (!dbClient) return [];
+    try {
+        const { data, error } = await dbClient
+            .from('containers')
+            .select('id, name, sala, space_type, container_type, pieces(id)')
+            .order('sala');
+        if (error) throw error;
+
+        // Agrupar por sala
+        const roomMap = {};
+        (data || []).forEach(c => {
+            if (!roomMap[c.sala]) {
+                roomMap[c.sala] = {
+                    sala: c.sala,
+                    space_type: c.space_type || 'almacen',
+                    containerCount: 0,
+                    pieceCount: 0,
+                    containers: []
+                };
+            }
+            roomMap[c.sala].containerCount++;
+            roomMap[c.sala].pieceCount += (c.pieces || []).length;
+            roomMap[c.sala].containers.push(c);
+        });
+
+        return Object.values(roomMap);
+    } catch(e) {
+        console.error('getAllRooms error:', e);
+        return [];
+    }
 };

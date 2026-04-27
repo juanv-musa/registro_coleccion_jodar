@@ -63,17 +63,12 @@ function generatePieceQR(elementId, pieceId) {
         height: 200,
         type: "svg",
         data: pieceId,
-        image: "assets/logo.png",
         dotsOptions: {
-            color: "#8DBE23", // Verde Lima
+            color: "#8DBE23",
             type: "rounded"
         },
         backgroundOptions: {
             color: "transparent",
-        },
-        imageOptions: {
-            crossOrigin: "anonymous",
-            margin: 5
         },
         cornersSquareOptions: {
             type: "extra-rounded",
@@ -154,7 +149,7 @@ function generatePieceQR(elementId, pieceId) {
         },
         backgroundOptions: { color: "#ffffff" },
         cornersSquareOptions: { type: "extra-rounded", color: "#8DBE23" },
-        cornersDotOptions: { type: "dot", color: "#8DBE23" },
+        cornersDotOptions: { type: "dot", color: "#6F961B" },
         qrOptions: { errorCorrectionLevel: 'M' }
     });
 
@@ -364,6 +359,74 @@ window.printFilteredLocations = function() {
     printWindow.document.close();
 };
 
+/**
+ * Imprime una etiqueta QR para una sala/habitación.
+ * El QR codifica "S-{salaId}" para distinguirlo de piezas y contenedores.
+ * @param {string} salaId - ID único de la sala (slug del nombre)
+ * @param {string} salaName - Nombre legible de la sala
+ * @param {string} spaceType - 'almacen' | 'exposicion'
+ */
+window.printRoomQR = function(salaId, salaName, spaceType = 'almacen') {
+    const printWindow = window.open('', '_blank', 'width=500,height=400');
+    const typeLabel = spaceType === 'exposicion' ? 'EXPOSICIÓN' : 'ALMACÉN';
+    const qrData = `S-${salaId}`;
+
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>QR Sala - ${salaName}</title>
+                <style>
+                    @page { size: auto; margin: 0mm; }
+                    body {
+                        font-family: 'Arial', sans-serif;
+                        display: flex; align-items: center; justify-content: center;
+                        height: 100vh; margin: 0; background: #fff;
+                    }
+                    .label {
+                        width: 80mm; height: 55mm;
+                        padding: 4mm; box-sizing: border-box;
+                        display: flex; flex-direction: column; align-items: center; justify-content: center;
+                        border: 2px solid #222;
+                        border-radius: 3mm;
+                    }
+                    .type-badge {
+                        font-size: 6pt; font-weight: bold; letter-spacing: 1px;
+                        background: #222; color: #fff;
+                        padding: 1mm 3mm; border-radius: 2mm;
+                        margin-bottom: 2mm; text-transform: uppercase;
+                    }
+                    .qr-box { width: 30mm; height: 30mm; margin-bottom: 2mm; display: flex; align-items: center; justify-content: center; }
+                    .qr-box canvas { width: 100% !important; height: 100% !important; object-fit: contain; }
+                    .room-name { font-size: 12pt; font-weight: bold; text-align: center; line-height: 1.2; max-width: 70mm; }
+                    .qr-id { font-size: 6pt; color: #888; margin-top: 1mm; font-family: monospace; }
+                </style>
+                <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"><\/script>
+            </head>
+            <body>
+                <div class="label">
+                    <div class="type-badge">${typeLabel}</div>
+                    <div id="qr-canvas" class="qr-box"></div>
+                    <div class="room-name">${salaName}</div>
+                    <div class="qr-id">${qrData}</div>
+                </div>
+                <script>
+                    const qrCode = new QRCodeStyling({
+                        width: 400, height: 400, type: "canvas",
+                        data: "${qrData}",
+                        dotsOptions: { color: "#000000", type: "rounded" },
+                        cornersSquareOptions: { type: "extra-rounded", color: "#000000" },
+                        cornersDotOptions: { type: "dot", color: "#000000" },
+                        qrOptions: { errorCorrectionLevel: 'H' }
+                    });
+                    qrCode.append(document.getElementById("qr-canvas"));
+                    setTimeout(() => { window.print(); window.close(); }, 600);
+                <\/script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
+
 // Global exposure
 window.startScanner = startScanner;
 window.stopScanner = stopScanner;
@@ -374,3 +437,4 @@ window.downloadContainerQR = downloadContainerQR;
 window.printPieceQR = printPieceQR;
 window.printFilteredPieces = printFilteredPieces;
 window.printFilteredLocations = printFilteredLocations;
+window.printRoomQR = printRoomQR;
