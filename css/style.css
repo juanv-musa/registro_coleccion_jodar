@@ -344,6 +344,11 @@ body {
     overflow: hidden;
 }
 
+.user-info {
+    min-width: 0;
+    flex: 1;
+}
+
 .user-info p {
     margin: 0;
 }
@@ -351,6 +356,9 @@ body {
 .user-name {
     font-size: 0.9rem;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .user-role {

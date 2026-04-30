@@ -86,7 +86,7 @@ function showView(viewId) {
         'detail': 'Pieza',
         'container-detail': 'Contenedor',
         'locations': 'Ubicaciones',
-        'users': 'Usuarios'
+        'users': 'Operarios'
     };
     document.getElementById('view-title').innerText = titleMap[viewId] || 'ArqueoScan';
 
@@ -763,7 +763,7 @@ function renderUsersGrid(users) {
     if (!list) return;
 
     if (!users || users.length === 0) {
-        list.innerHTML = '<div class="glass p-2"><p class="empty-state">No hay usuarios creados.</p></div>';
+        list.innerHTML = '<div class="glass p-2"><p class="empty-state">No hay operarios creados.</p></div>';
         return;
     }
 
@@ -793,8 +793,8 @@ function renderUsersGrid(users) {
 }
 
 window.showAddUserModal = function() {
-    document.getElementById('modal-user-title').innerText = "Nuevo Usuario";
-    document.getElementById('btn-submit-user').innerText = "Crear Usuario";
+    document.getElementById('modal-user-title').innerText = "Nuevo Operario";
+    document.getElementById('btn-submit-user').innerText = "Crear Operario";
     document.getElementById('edit-user-id').value = "";
     document.getElementById('form-add-user').reset();
     document.getElementById('add-user-modal').style.display = 'flex';
@@ -820,15 +820,15 @@ async function handleAddUser(e) {
     try {
         if (isEdit) {
             await updateOperator(userId, userData);
-            alert("Usuario actualizado con éxito.");
+            alert("Operario actualizado con éxito.");
         } else {
             await createOperator(userData);
-            alert("Usuario guardado con éxito.");
+            alert("Operario guardado con éxito.");
         }
         window.closeAddUserModal();
         loadUsers();
     } catch(err) {
-        alert("Error al guardar usuario: " + err.message);
+        alert("Error al guardar operario: " + err.message);
     }
 }
 
@@ -838,7 +838,7 @@ window.editUser = async function(id) {
         const user = users.find(u => u.id === id || u.id === parseInt(id));
         if (!user) return;
         
-        document.getElementById('modal-user-title').innerText = "Editar Usuario";
+        document.getElementById('modal-user-title').innerText = "Editar Operario";
         document.getElementById('btn-submit-user').innerText = "Guardar Cambios";
         document.getElementById('edit-user-id').value = user.id;
         document.getElementById('new-user-name').value = user.name;
@@ -860,7 +860,7 @@ window.toggleUserStatus = async function(id, status) {
 };
 
 window.deleteUser = async function(id) {
-    if (!confirm("¿Seguro que quieres borrar este usuario? Esta acción no se puede deshacer.")) return;
+    if (!confirm("¿Seguro que quieres borrar este operario? Esta acción no se puede deshacer.")) return;
     try {
         await deleteOperator(id);
         loadUsers();
