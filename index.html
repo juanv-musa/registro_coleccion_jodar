@@ -394,25 +394,29 @@
         </main>
     </div>
 
-    <!-- PIN Access Overlay -->
-    <div id="pin-overlay" class="overlay">
-        <div class="pin-card glass">
-            <img src="assets/logo.png" alt="ArqueoScan" class="pin-logo">
-            <h2>Acceso Autorizado</h2>
-            <p>Introduce tu PIN para identificarte</p>
-            <div class="pin-display">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
+    <!-- Login Overlay (Supabase Auth) -->
+    <div id="login-overlay" class="overlay">
+        <div class="login-card glass">
+            <img src="assets/logo.png" alt="ArqueoScan" class="login-logo">
+            <h2>Acceso al Sistema</h2>
+            <p>Identifícate con tu cuenta de ArqueoScan</p>
+            
+            <form id="form-login" class="mt-2">
+                <div class="form-group mb-1">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="login-email" class="glass-input" placeholder="ejemplo@email.com" required>
+                </div>
+                <div class="form-group mb-1">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-password" class="glass-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-gold w-100 mt-1">Iniciar Sesión</button>
+                <p id="login-error" class="error-text mt-1" style="display: none;">Credenciales incorrectas o cuenta no autorizada.</p>
+            </form>
+            
+            <div class="login-footer mt-2">
+                <p class="text-xs opacity-50">Si no tienes cuenta, contacta con el administrador.</p>
             </div>
-            <div class="pin-numpad">
-                <button class="num">1</button><button class="num">2</button><button class="num">3</button>
-                <button class="num">4</button><button class="num">5</button><button class="num">6</button>
-                <button class="num">7</button><button class="num">8</button><button class="num">9</button>
-                <button class="clear"><i data-lucide="delete"></i></button><button class="num">0</button><button class="enter"><i data-lucide="arrow-right"></i></button>
-            </div>
-            <p id="pin-error" class="error-text" style="display: none;">PIN incorrecto. Inténtalo de nuevo.</p>
         </div>
     </div>
 

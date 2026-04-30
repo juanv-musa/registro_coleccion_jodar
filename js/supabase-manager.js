@@ -14,6 +14,13 @@ window.initSupabase = function() {
             try {
                 dbClient = lib.createClient(config.url, config.anonKey);
                 console.log("✅ Conectado a Supabase.");
+                
+                // Escuchar cambios de autenticación
+                dbClient.auth.onAuthStateChange((event, session) => {
+                    console.log("Auth event:", event);
+                    if (window.handleAuthStateChange) window.handleAuthStateChange(event, session);
+                });
+
                 return true;
             } catch (err) { console.error(err); }
         }
@@ -27,6 +34,27 @@ window.initSupabase = function() {
             if (intentar() || r > 20) clearInterval(i);
         }, 500);
     }
+};
+
+// --- AUTHENTICATION ---
+
+window.signIn = async function(email, password) {
+    if (!dbClient) throw new Error("No hay conexión con Supabase");
+    const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+};
+
+window.signOut = async function() {
+    if (!dbClient) return;
+    const { error } = await dbClient.auth.signOut();
+    if (error) console.error("Error al cerrar sesión:", error);
+};
+
+window.getSession = async function() {
+    if (!dbClient) return null;
+    const { data: { session } } = await dbClient.auth.getSession();
+    return session;
 };
 
 // --- FUNCIONES DE DATOS ---
@@ -128,8 +156,26 @@ window.bulkImportPieces = async function(pieces, containers) {
 
 window.verifyOperatorPIN = async function(pin) {
     if (!dbClient) return null;
-    const { data, error } = await dbClient.from('operators').select('*').eq('pin', pin).eq('active', true).single();
-    return error ? null : data;
+    
+    // Verificamos si hay sesión activa antes de consultar la tabla de operadores
+    const session = await window.getSession();
+    if (!session) {
+        console.warn("Intento de verificación de PIN sin sesión activa.");
+        return null;
+    }
+
+    const { data, error } = await dbClient
+        .from('operators')
+        .select('*')
+        .eq('pin', pin)
+        .eq('active', true)
+        .maybeSingle();
+        
+    if (error) {
+        console.error("Error en verifyOperatorPIN:", error);
+        return null;
+    }
+    return data;
 };
 
 window.getPieceById = async function(id) {

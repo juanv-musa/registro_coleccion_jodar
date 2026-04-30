@@ -643,7 +643,7 @@ tr:hover td {
     justify-content: center;
 }
 
-.pin-card {
+.pin-card, .login-card {
     padding: 3rem;
     border-radius: var(--radius-xl);
     width: 100%;
@@ -651,7 +651,7 @@ tr:hover td {
     text-align: center;
 }
 
-.pin-logo {
+.pin-logo, .login-logo {
     width: 180px;
     height: auto;
     margin: 0 auto 1.5rem;
@@ -702,6 +702,11 @@ tr:hover td {
     background: var(--primary);
     color: var(--text-dark);
     transform: scale(1.1);
+}
+
+.login-footer {
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
 }
 
 /* Modals */

@@ -29,32 +29,30 @@ const state = {
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Forzar entrada directa primero para evitar pantalla negra
-    state.currentUser = { name: "Usuario Preview", pin: "0000" };
-    const appEl = document.getElementById('app');
-    const pinEl = document.getElementById('pin-overlay');
-    
-    if (pinEl) pinEl.style.display = 'none';
-    if (appEl) appEl.style.display = 'grid';
-    
-    // Mostrar la estructura pero no cargar datos todavía
-    showView('dashboard', false); 
-
+    // Inicializar UI básica
     try {
         initLucide();
-    } catch (e) {}
-
-    try {
-        initSupabase();
-    } catch (e) {}
-
-    try {
         setupEventListeners();
     } catch (e) {
         console.error("Error al configurar botones:", e);
     }
-});
 
+    // Inicializar Supabase
+    try {
+        initSupabase();
+        
+        // Verificar sesión inicial
+        const session = await getSession();
+        if (session) {
+            console.log("Sesión activa detectada.");
+            state.currentUser = session.user;
+        } else {
+            showLoginOverlay();
+        }
+    } catch (e) {
+        console.error("Error en inicialización:", e);
+    }
+});
 function initLucide() {
     if (window.lucide) {
         window.lucide.createIcons();
@@ -138,64 +136,57 @@ function populateImportDestinationSelect(containers) {
     });
 }
 
-// --- AUTH / PIN LOGIC ---
-function showPINOverlay() {
-    document.getElementById('pin-overlay').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    state.pinBuffer = "";
-    updatePinDots();
+// --- AUTH / SESSION LOGIC (SUPABASE AUTH) ---
+
+function showLoginOverlay() {
+    const loginEl = document.getElementById('login-overlay');
+    const appEl = document.getElementById('app');
+    if (loginEl) loginEl.style.display = 'flex';
+    if (appEl) appEl.style.display = 'none';
 }
 
-function updatePinDots() {
-    const dots = document.querySelectorAll('.pin-display .dot');
-    dots.forEach((dot, index) => {
-        dot.classList.toggle('active', index < state.pinBuffer.length);
-    });
+function hideLoginOverlay() {
+    const loginEl = document.getElementById('login-overlay');
+    const appEl = document.getElementById('app');
+    if (loginEl) loginEl.style.display = 'none';
+    if (appEl) appEl.style.display = 'grid';
 }
 
-async function handlePinInput(num) {
-    if (state.pinBuffer.length < 4) {
-        state.pinBuffer += num;
-        updatePinDots();
-    }
-
-    if (state.pinBuffer.length === 4) {
-        // En una app real, validaríamos contra la tabla 'operators' en Supabase
-        // Por ahora, aceptamos "1234" o cualquier PIN para el prototipo
-        validatePIN(state.pinBuffer);
-    }
-}
-
-async function validatePIN(pin) {
-    // Intentar verificar en la base de datos
-    const operator = await verifyOperatorPIN(pin);
-    
-    if (operator) {
-        state.currentUser = operator;
-        document.getElementById('current-user-name').innerText = state.currentUser.name;
-        document.getElementById('pin-overlay').style.display = 'none';
-        document.getElementById('app').style.display = 'grid';
-        showView('dashboard');
-    } else {
-        // Fallback for testing: Si Supabase no está configurado, permitir 1234
-        if (pin === "1234") {
-            state.currentUser = { name: "Invitado (Test)", pin: "1234" };
-            document.getElementById('current-user-name').innerText = state.currentUser.name;
-            document.getElementById('pin-overlay').style.display = 'none';
-            document.getElementById('app').style.display = 'grid';
+window.handleAuthStateChange = function(event, session) {
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (session) {
+            state.currentUser = session.user;
+            document.getElementById('current-user-name').innerText = session.user.email;
+            hideLoginOverlay();
             showView('dashboard');
-            return;
         }
-        showPinError();
+    } else if (event === 'SIGNED_OUT') {
+        state.currentUser = null;
+        showLoginOverlay();
+    }
+};
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('login-error');
+
+    try {
+        errorEl.style.display = 'none';
+        await signIn(email, password);
+        // El handleAuthStateChange se encargará de redirigir
+    } catch (err) {
+        console.error("Login Error:", err);
+        errorEl.style.display = 'block';
+        errorEl.innerText = "Error: " + (err.message || "Credenciales inválidas");
     }
 }
 
-function showPinError() {
-    const errorEl = document.getElementById('pin-error');
-    errorEl.style.display = 'block';
-    state.pinBuffer = "";
-    updatePinDots();
-    setTimeout(() => { errorEl.style.display = 'none'; }, 2000);
+async function handleLogout() {
+    if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
+        await signOut();
+    }
 }
 
 // --- DATA LOADING ---
@@ -575,12 +566,8 @@ function setupEventListeners() {
         };
     });
 
-    // Numpad
-    document.querySelectorAll('.num').forEach(btn => {
-        btn.onclick = () => handlePinInput(btn.innerText);
-    });
-    
-    safeOnClick('btn-logout', showPINOverlay);
+    safeOnClick('btn-logout', handleLogout);
+    safeListener('form-login', 'submit', handleLogin);
     safeOnClick('btn-sync', loadDashboardData);
     safeOnClick('btn-back-to-inventory', () => {
         if (state.previousView === 'container-detail') {
