@@ -144,6 +144,10 @@
                             <input type="text" id="inventory-search" placeholder="Buscar pieza, nº inv, material..." oninput="window.filterInventory()">
                         </div>
                         <div class="header-actions">
+                            <button class="btn-gold" onclick="window.showAddPieceModal()">
+                                <i data-lucide="plus"></i>
+                                Nueva Pieza
+                            </button>
                             <button class="btn-secondary" onclick="window.exportInventory()">
                                 <i data-lucide="download"></i>
                                 Exportar
@@ -238,6 +242,9 @@
                 <section id="view-detail" class="view" style="display: none;">
                     <div class="detail-header">
                         <button id="btn-back-to-inventory" class="btn-text"><i data-lucide="chevron-left"></i> Volver</button>
+                        <button id="btn-edit-piece" class="btn-outline" style="margin-left: auto;" onclick="window.showEditPieceModal(state.currentPiece.id)">
+                            <i data-lucide="edit-3"></i> Editar
+                        </button>
                     </div>
                     <div class="detail-grid">
                     <div class="detail-main glass">
@@ -527,6 +534,90 @@
                 <div class="modal-actions mt-2">
                     <button type="button" onclick="closeAddContainerModal()" class="btn-text">Cancelar</button>
                     <button type="submit" id="btn-submit-container" class="btn-gold">Crear Ubicación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Piece Modal -->
+    <div id="add-piece-modal" class="modal-overlay" style="display: none;">
+        <div class="modal glass modal-wide">
+            <h2 id="modal-piece-title">Nueva Pieza</h2>
+            <form id="form-add-piece" class="mt-2">
+                <input type="hidden" id="edit-piece-id" value="">
+                
+                <div class="grid-2">
+                    <div class="form-group mb-1">
+                        <label>Nº Inventario (Nuevo)</label>
+                        <input type="text" id="piece-inv-new" class="glass-input" placeholder="Ej: P-001" required>
+                    </div>
+                    <div class="form-group mb-1">
+                        <label>NIM (Nº Inv Antiguo)</label>
+                        <input type="text" id="piece-inv-old" class="glass-input" placeholder="Ej: 1234-A">
+                    </div>
+                </div>
+
+                <div class="form-group mb-1">
+                    <label>Objeto / Nombre Principal</label>
+                    <input type="text" id="piece-objeto" class="glass-input" placeholder="Ej: Cuenco, Hacha, etc." required>
+                </div>
+
+                <div class="form-group mb-1">
+                    <label>Denominación / Título</label>
+                    <input type="text" id="piece-name" class="glass-input" placeholder="Ej: Cuenco de cerámica campaniforme">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group mb-1">
+                        <label>Material</label>
+                        <input type="text" id="piece-material" class="glass-input" placeholder="Ej: Cerámica, Bronce">
+                    </div>
+                    <div class="form-group mb-1">
+                        <label>Cronología</label>
+                        <input type="text" id="piece-chronology" class="glass-input" placeholder="Ej: Siglo III d.C.">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group mb-1">
+                        <label>Dimensiones</label>
+                        <input type="text" id="piece-dimensions" class="glass-input" placeholder="Ej: 15 x 10 cm">
+                    </div>
+                    <div class="form-group mb-1">
+                        <label>Procedencia</label>
+                        <input type="text" id="piece-provenance" class="glass-input" placeholder="Ej: Yacimiento X">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group mb-1">
+                        <label>Autor</label>
+                        <input type="text" id="piece-author" class="glass-input" placeholder="Ej: Desconocido">
+                    </div>
+                    <div class="form-group mb-1">
+                        <label>Sección</label>
+                        <input type="text" id="piece-section" class="glass-input" placeholder="Ej: Arqueología">
+                    </div>
+                </div>
+
+                <div class="form-group mb-1">
+                    <label>URL de Imagen (opcional)</label>
+                    <input type="url" id="piece-image-url" class="glass-input" placeholder="https://ejemplo.com/foto.jpg">
+                </div>
+
+                <div class="form-group mb-1">
+                    <label>Descripción</label>
+                    <textarea id="piece-description" class="glass-input" rows="3" placeholder="Descripción detallada de la pieza..."></textarea>
+                </div>
+
+                <div class="form-group mb-1">
+                    <label>Observaciones</label>
+                    <textarea id="piece-observations" class="glass-input" rows="2" placeholder="Notas adicionales..."></textarea>
+                </div>
+                
+                <div class="modal-actions mt-2">
+                    <button type="button" onclick="closeAddPieceModal()" class="btn-text">Cancelar</button>
+                    <button type="submit" id="btn-submit-piece" class="btn-gold">Guardar Pieza</button>
                 </div>
             </form>
         </div>

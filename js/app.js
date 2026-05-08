@@ -686,9 +686,10 @@ function setupEventListeners() {
         btn.onclick = () => showView('dashboard');
     });
 
-    // Formulario de nueva ubicación y usuario
+    // Formulario de nueva ubicación, usuario y pieza
     safeListener('form-add-container', 'submit', handleAddContainer);
     safeListener('form-add-user', 'submit', handleAddUser);
+    safeListener('form-add-piece', 'submit', handleAddPiece);
 
     // Toggle Sidebar para móvil
     safeOnClick('btn-menu-toggle', () => {
@@ -800,6 +801,96 @@ window.showAddUserModal = function() {
     document.getElementById('add-user-modal').style.display = 'flex';
 };
 
+// --- PIECES MANAGEMENT (NEW) ---
+window.showAddPieceModal = function() {
+    document.getElementById('modal-piece-title').innerText = "Nueva Pieza";
+    document.getElementById('btn-submit-piece').innerText = "Crear Pieza";
+    document.getElementById('edit-piece-id').value = "";
+    document.getElementById('form-add-piece').reset();
+    document.getElementById('add-piece-modal').style.display = 'flex';
+};
+
+window.closeAddPieceModal = function() {
+    document.getElementById('add-piece-modal').style.display = 'none';
+    document.getElementById('form-add-piece').reset();
+};
+
+window.showEditPieceModal = async function(id) {
+    try {
+        const p = await getPieceById(id);
+        if (!p) throw new Error("No se encontró la pieza");
+        
+        document.getElementById('modal-piece-title').innerText = "Editar Pieza";
+        document.getElementById('btn-submit-piece').innerText = "Guardar Cambios";
+        document.getElementById('edit-piece-id').value = p.id;
+        
+        document.getElementById('piece-inv-new').value = p.inventory_number_new || '';
+        document.getElementById('piece-inv-old').value = p.inventory_number_old || '';
+        document.getElementById('piece-objeto').value = p.objeto || '';
+        document.getElementById('piece-name').value = p.name || '';
+        document.getElementById('piece-material').value = p.material || '';
+        document.getElementById('piece-chronology').value = p.chronology || '';
+        document.getElementById('piece-dimensions').value = p.dimensions || '';
+        document.getElementById('piece-provenance').value = p.provenance || '';
+        document.getElementById('piece-author').value = p.author || '';
+        document.getElementById('piece-section').value = p.section || '';
+        document.getElementById('piece-image-url').value = p.image_url || '';
+        document.getElementById('piece-description').value = p.description || '';
+        document.getElementById('piece-observations').value = p.observations || '';
+        
+        document.getElementById('add-piece-modal').style.display = 'flex';
+    } catch (err) {
+        console.error(err);
+        alert("Error al cargar pieza: " + err.message);
+    }
+};
+
+async function handleAddPiece(e) {
+    e.preventDefault();
+    const editId = document.getElementById('edit-piece-id').value;
+    const isEdit = !!editId;
+    
+    const pieceData = {
+        inventory_number_new: document.getElementById('piece-inv-new').value,
+        inventory_number_old: document.getElementById('piece-inv-old').value,
+        objeto: document.getElementById('piece-objeto').value,
+        name: document.getElementById('piece-name').value,
+        material: document.getElementById('piece-material').value,
+        chronology: document.getElementById('piece-chronology').value,
+        dimensions: document.getElementById('piece-dimensions').value,
+        provenance: document.getElementById('piece-provenance').value,
+        author: document.getElementById('piece-author').value,
+        section: document.getElementById('piece-section').value,
+        image_url: document.getElementById('piece-image-url').value,
+        description: document.getElementById('piece-description').value,
+        observations: document.getElementById('piece-observations').value,
+        updated_at: new Date()
+    };
+    
+    try {
+        if (isEdit) {
+            await updatePiece(editId, pieceData);
+            alert("Pieza actualizada con éxito.");
+            // Si estábamos en la vista de detalle, recargarla
+            if (state.currentView === 'detail' && state.currentPiece.id === editId) {
+                await showPieceDetail(editId);
+            }
+        } else {
+            const newPiece = await createPiece(pieceData);
+            alert("Pieza creada con éxito.");
+            // Mostrar la nueva pieza si se desea o volver al inventario
+            showPieceDetail(newPiece.id);
+        }
+        
+        window.closeAddPieceModal();
+        loadInventory();
+        loadDashboardData();
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar la pieza: " + err.message);
+    }
+}
+
 window.closeAddUserModal = function() {
     document.getElementById('add-user-modal').style.display = 'none';
     document.getElementById('form-add-user').reset();
@@ -903,6 +994,23 @@ async function handleAddContainer(e) {
     }
 }
 
+window.deleteLocation = async function(id, pieceCount) {
+    if (pieceCount > 0) {
+        if (!confirm(`Esta ubicación contiene ${pieceCount} piezas. Si la eliminas, las piezas se quedarán sin ubicación asignada. ¿Deseas continuar?`)) return;
+    } else {
+        if (!confirm("¿Estás seguro de que quieres eliminar esta ubicación?")) return;
+    }
+
+    try {
+        await deleteContainer(id);
+        alert("Ubicación eliminada con éxito.");
+        loadLocations();
+    } catch (err) {
+        console.error(err);
+        alert("Error al eliminar la ubicación: " + err.message);
+    }
+};
+
 async function loadLocations() {
     if (typeof dbClient === 'undefined' || !dbClient) return;
     try {
@@ -982,6 +1090,9 @@ function renderLocationsGrid(containers) {
                     </button>
                     <button class="btn-icon" onclick="window.downloadContainerQR('${c.id}', '${(c.name || 'Caja').replace(/'/g, "\\'")}}')" title="Descargar QR">
                         <i data-lucide="download"></i>
+                    </button>
+                    <button class="btn-icon btn-danger" onclick="window.deleteLocation('${c.id}', ${pieceCount})" title="Eliminar ubicación">
+                        <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </div>

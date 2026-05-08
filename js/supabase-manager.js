@@ -184,6 +184,22 @@ window.getPieceById = async function(id) {
     return data;
 };
 
+window.createPiece = async function(pieceData) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    // Si no viene ID, generamos uno temporal estilo P-TIMESTAMP
+    if (!pieceData.id) pieceData.id = `P-${Date.now()}`;
+    const { data, error } = await dbClient.from('pieces').insert([pieceData]).select();
+    if (error) throw error;
+    return data[0];
+};
+
+window.updatePiece = async function(id, updates) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    const { data, error } = await dbClient.from('pieces').update(updates).eq('id', id).select();
+    if (error) throw error;
+    return data[0];
+};
+
 // --- MOVIMIENTOS Y UBICACIONES ---
 window.updatePieceLocation = async function(pieceId, containerId, operatorId) {
     if (!dbClient) throw new Error("No hay conexión con la base de datos");
@@ -222,6 +238,13 @@ window.getContainerById = async function(id) {
     if (!dbClient) return null;
     const { data } = await dbClient.from('containers').select('*, pieces(*)').eq('id', id).single();
     return data;
+};
+
+window.deleteContainer = async function(id) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    const { error } = await dbClient.from('containers').delete().eq('id', id);
+    if (error) throw error;
+    return true;
 };
 
 // --- USUARIOS / OPERADORES ---

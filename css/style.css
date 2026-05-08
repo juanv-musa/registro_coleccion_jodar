@@ -827,6 +827,15 @@ tr:hover td {
     background: rgba(0, 0, 0, 0.03);
 }
 
+.btn-danger {
+    color: var(--error) !important;
+}
+
+.btn-danger:hover {
+    background: rgba(220, 53, 69, 0.1) !important;
+    color: #bd2130 !important;
+}
+
 /* Icon Buttons */
 .btn-icon {
     background: transparent;
@@ -1475,6 +1484,12 @@ th[onclick]:hover {
 /* --- Modal rediseñado: selector de tipo de espacio --- */
 .modal-wide {
     max-width: 560px !important;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
 }
 
 .space-type-selector {
