@@ -245,6 +245,9 @@
                         <button id="btn-edit-piece" class="btn-outline" style="margin-left: auto;" onclick="window.showEditPieceModal(state.currentPiece.id)">
                             <i data-lucide="edit-3"></i> Editar
                         </button>
+                        <button id="btn-delete-piece" class="btn-icon btn-danger" style="margin-left: 0.5rem;" onclick="window.handleDeletePiece(state.currentPiece.id)" title="Eliminar pieza">
+                            <i data-lucide="trash-2"></i>
+                        </button>
                     </div>
                     <div class="detail-grid">
                     <div class="detail-main glass">
@@ -601,7 +604,7 @@
                 </div>
 
                 <div class="form-group mb-1">
-                    <label>URL de Imagen (opcional)</label>
+                    <label>URL de Imagen <span class="text-muted" style="font-size:0.7rem;">(Prioridad: 1. URL / 2. [Nº Inv Nuevo].jpg / 3. [Nº Inv Antiguo].jpg)</span></label>
                     <input type="url" id="piece-image-url" class="glass-input" placeholder="https://ejemplo.com/foto.jpg">
                 </div>
 

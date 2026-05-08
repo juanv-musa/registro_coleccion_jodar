@@ -200,6 +200,13 @@ window.updatePiece = async function(id, updates) {
     return data[0];
 };
 
+window.deletePiece = async function(id) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    const { error } = await dbClient.from('pieces').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+};
+
 // --- MOVIMIENTOS Y UBICACIONES ---
 window.updatePieceLocation = async function(pieceId, containerId, operatorId) {
     if (!dbClient) throw new Error("No hay conexión con la base de datos");

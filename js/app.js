@@ -281,7 +281,16 @@ function renderInventoryTable(pieces) {
     tbody.innerHTML = pieces.map(p => {
         const c = p.containers || {};
         const path = c.caja ? `${c.sala} > ${c.caja}` : 'Sin ubicación';
-        const photo = p.image_url ? `<img src="${p.image_url}" class="table-thumb" onerror="this.src='img/placeholder.jpg'">` : '<div class="no-photo-thumb"></div>';
+        
+        // Criterio de imagen: URL > Nº Inv Nuevo > Nº Inv Antiguo (NIM)
+        const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
+        const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
+        const initialSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
+        
+        const photo = `<img src="${initialSrc}" class="table-thumb" 
+            onerror="if(this.src.includes('${p.inventory_number_new}')) { this.src='${imgOld || 'img/placeholder.jpg'}'; } 
+                     else if(this.src.includes('${p.inventory_number_old}')) { this.src='img/placeholder.jpg'; } 
+                     else { this.src='${imgNew || imgOld || 'img/placeholder.jpg'}'; }">`;
         
         return `
             <tr onclick="window.showPieceDetail('${p.id}')" style="cursor: pointer;">
@@ -384,15 +393,23 @@ async function showPieceDetail(id) {
         document.getElementById('detail-description').innerText = p.description || "Sin descripción.";
         document.getElementById('detail-observations').innerText = p.observations || "Sin observaciones.";
         
-        // Manejo de imagen
+        // Manejo de imagen: Criterio URL > Nº Inv Nuevo > Nº Inv Antiguo (NIM)
         const imgContainer = document.getElementById('detail-image-container');
         const imgEl = document.getElementById('detail-image');
-        if (p.image_url) {
-            imgEl.src = p.image_url;
-            imgContainer.style.display = 'block';
-        } else {
-            imgContainer.style.display = 'none';
-        }
+        
+        const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
+        const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
+        
+        imgEl.src = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
+        
+        imgEl.onerror = () => {
+            if (imgEl.src.includes(p.inventory_number_new) && imgOld) {
+                imgEl.src = imgOld;
+            } else {
+                imgContainer.style.display = 'none';
+            }
+        };
+        imgContainer.style.display = 'block';
         
         generatePieceQR('piece-qr-display', p.id);
         renderPieceHistory(p.movements);
@@ -890,6 +907,21 @@ async function handleAddPiece(e) {
         alert("Error al guardar la pieza: " + err.message);
     }
 }
+
+window.handleDeletePiece = async function(id) {
+    if (!confirm("¿Estás seguro de que quieres eliminar esta pieza permanentemente? Esta acción no se puede deshacer.")) return;
+    
+    try {
+        await deletePiece(id);
+        alert("Pieza eliminada con éxito.");
+        showView('inventory');
+        loadInventory();
+        loadDashboardData();
+    } catch (err) {
+        console.error(err);
+        alert("Error al eliminar la pieza: " + err.message);
+    }
+};
 
 window.closeAddUserModal = function() {
     document.getElementById('add-user-modal').style.display = 'none';
