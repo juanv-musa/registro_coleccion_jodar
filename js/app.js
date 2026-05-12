@@ -549,6 +549,19 @@ async function handleDestinationScanned(id) {
     }
 }
 
+async function handleNoDestinationSelected() {
+    state.targetContainer = null;
+    state.moveMode = false;
+    
+    document.getElementById('dest-name').innerText = "SIN UBICACIÓN";
+    document.getElementById('dest-path').innerText = "La pieza quedará registrada sin contenedor asignado.";
+    
+    document.getElementById('move-step-scan').style.display = 'none';
+    document.getElementById('move-step-confirm').style.display = 'block';
+    document.getElementById('move-modal').style.display = 'flex';
+    document.getElementById('move-auth-pin').value = "";
+}
+
 async function movePieceToContainer(pieceId, containerId, operatorPIN) {
     // Encontrar operador por PIN
     let operator = await verifyOperatorPIN(operatorPIN);
@@ -658,9 +671,16 @@ function setupEventListeners() {
 
     // Movement
     safeOnClick('btn-start-move', () => {
-        document.getElementById('move-piece-info').innerText = `Moviendo ${state.currentPiece.name}`;
+        document.getElementById('move-piece-info').innerText = `Moviendo ${state.currentPiece.objeto || state.currentPiece.name}`;
         document.getElementById('move-step-scan').style.display = 'block';
         document.getElementById('move-step-confirm').style.display = 'none';
+        
+        // Si ya no tiene ubicación, ocultamos el botón de quitar ubicación
+        const btnRemove = document.getElementById('btn-remove-location');
+        if (btnRemove) {
+            btnRemove.style.display = state.currentPiece.container_id ? 'block' : 'none';
+        }
+        
         document.getElementById('move-modal').style.display = 'flex';
     });
 
@@ -668,6 +688,10 @@ function setupEventListeners() {
         document.getElementById('move-modal').style.display = 'none';
         state.moveMode = true;
         showView('scanner');
+    });
+
+    safeOnClick('btn-remove-location', () => {
+        handleNoDestinationSelected();
     });
 
     safeOnClick('btn-confirm-move', async () => {
@@ -678,7 +702,8 @@ function setupEventListeners() {
         }
 
         try {
-            await movePieceToContainer(state.currentPiece.id, state.targetContainer.id, pin);
+            const destId = state.targetContainer ? state.targetContainer.id : null;
+            await movePieceToContainer(state.currentPiece.id, destId, pin);
             document.getElementById('move-modal').style.display = 'none';
             document.getElementById('move-auth-pin').value = ""; // Limpiar
             
