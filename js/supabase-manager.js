@@ -133,7 +133,7 @@ window.getAllContainers = async function() {
     return data || [];
 };
 
-// --- IMPORTACIÓN (La función que daba error de length) ---
+// --- IMPORTACIÓN ---
 window.bulkImportPieces = async function(pieces, containers) {
     console.log("Iniciando importación...", { piezas: pieces?.length, cajas: containers?.length });
     
@@ -229,6 +229,33 @@ window.updatePieceLocation = async function(pieceId, containerId, operatorId) {
         operator_id: operatorId,
         timestamp: new Date()
     });
+    if (mErr) throw mErr;
+
+    return true;
+};
+
+window.updatePiecesLocationBatch = async function(pieceIds, containerId, operatorId) {
+    if (!dbClient) throw new Error("No hay conexión con la base de datos");
+    
+    // 1. Obtener ubicaciones actuales para el historial
+    const { data: currentPieces } = await dbClient.from('pieces').select('id, container_id').in('id', pieceIds);
+    
+    // 2. Actualizar las piezas en lote
+    const { error: pErr } = await dbClient.from('pieces')
+        .update({ container_id: containerId, updated_at: new Date() })
+        .in('id', pieceIds);
+    if (pErr) throw pErr;
+
+    // 3. Registrar los movimientos en el historial
+    const movements = currentPieces.map(p => ({
+        piece_id: p.id,
+        origin_container_id: p.container_id,
+        destination_container_id: containerId,
+        operator_id: operatorId,
+        timestamp: new Date()
+    }));
+    
+    const { error: mErr } = await dbClient.from('movements').insert(movements);
     if (mErr) throw mErr;
 
     return true;

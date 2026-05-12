@@ -24,7 +24,9 @@ const state = {
     filteredLocations: null,
     locationTypeFilter: 'all',
     locationSubtypeFilter: null,
-    previousContainerView: null   // para saber si volver a la sala o a la lista
+    previousContainerView: null,   // para saber si volver a la sala o a la lista
+    selectedPieces: new Set(),
+    selectedLocations: new Set()
 };
 
 // --- INITIALIZATION ---
@@ -293,13 +295,14 @@ function renderInventoryTable(pieces) {
                      else { this.src='${imgNew || imgOld || 'img/placeholder.jpg'}'; }">`;
         
         return `
-            <tr onclick="window.showPieceDetail('${p.id}')" style="cursor: pointer;">
-                <td><span class="badge-id">${p.inventory_number_new || p.id}</span></td>
-                <td class="mono">${p.inventory_number_old || '-'}</td>
-                <td>${photo}</td>
-                <td><strong>${p.objeto || p.name}</strong></td>
-                <td>${p.material || '-'}</td>
-                <td><span class="location-tag">${path}</span></td>
+            <tr style="cursor: pointer;">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="piece-checkbox" data-id="${p.id}" ${state.selectedPieces.has(p.id) ? 'checked' : ''} onchange="window.togglePieceSelection('${p.id}', this.checked)"></td>
+                <td onclick="window.showPieceDetail('${p.id}')"><span class="badge-id">${p.inventory_number_new || p.id}</span></td>
+                <td onclick="window.showPieceDetail('${p.id}')" class="mono">${p.inventory_number_old || '-'}</td>
+                <td onclick="window.showPieceDetail('${p.id}')">${photo}</td>
+                <td onclick="window.showPieceDetail('${p.id}')"><strong>${p.objeto || p.name}</strong></td>
+                <td onclick="window.showPieceDetail('${p.id}')">${p.material || '-'}</td>
+                <td onclick="window.showPieceDetail('${p.id}')"><span class="location-tag">${path}</span></td>
             </tr>
         `;
     }).join('');
@@ -358,9 +361,52 @@ function sortInventory(col) {
     renderInventoryTable(sorted);
 }
 
-window.filterInventory = filterInventory;
-window.sortInventory = sortInventory;
 window.renderInventoryTable = renderInventoryTable;
+window.togglePieceSelection = function(id, isChecked) {
+    if (isChecked) state.selectedPieces.add(id);
+    else state.selectedPieces.delete(id);
+    updatePieceBatchUI();
+};
+
+window.toggleSelectAllPieces = function(isChecked) {
+    const pieces = state.filteredPieces || state.allPieces;
+    pieces.forEach(p => {
+        if (isChecked) state.selectedPieces.add(p.id);
+        else state.selectedPieces.delete(p.id);
+    });
+    renderInventoryTable(pieces);
+    updatePieceBatchUI();
+};
+
+window.clearPieceSelection = function() {
+    state.selectedPieces.clear();
+    const selectAll = document.getElementById('inventory-select-all');
+    if (selectAll) selectAll.checked = false;
+    renderInventoryTable(state.filteredPieces || state.allPieces);
+    updatePieceBatchUI();
+};
+
+function updatePieceBatchUI() {
+    const count = state.selectedPieces.size;
+    const bar = document.getElementById('inventory-batch-actions');
+    const countEl = document.getElementById('selected-pieces-count');
+    if (bar && countEl) {
+        bar.style.display = count > 0 ? 'flex' : 'none';
+        countEl.innerText = `${count} seleccionada${count !== 1 ? 's' : ''}`;
+    }
+}
+
+window.startBatchMove = function() {
+    const count = state.selectedPieces.size;
+    document.getElementById('move-piece-info').innerText = `Moviendo ${count} piezas seleccionadas`;
+    document.getElementById('move-step-scan').style.display = 'block';
+    document.getElementById('move-step-confirm').style.display = 'none';
+    
+    const btnRemove = document.getElementById('btn-remove-location');
+    if (btnRemove) btnRemove.style.display = 'block';
+    
+    document.getElementById('move-modal').style.display = 'flex';
+};
 
 // --- PIECE DETAIL & MOVEMENT ---
 async function showPieceDetail(id) {
@@ -703,14 +749,23 @@ function setupEventListeners() {
 
         try {
             const destId = state.targetContainer ? state.targetContainer.id : null;
-            await movePieceToContainer(state.currentPiece.id, destId, pin);
+            
+            if (state.selectedPieces.size > 0) {
+                // Batch move
+                const pieceIds = Array.from(state.selectedPieces);
+                await batchMovePieces(pieceIds, destId, pin);
+                window.clearPieceSelection();
+            } else {
+                // Single move
+                await movePieceToContainer(state.currentPiece.id, destId, pin);
+                await showPieceDetail(state.currentPiece.id); 
+            }
+            
             document.getElementById('move-modal').style.display = 'none';
             document.getElementById('move-auth-pin').value = ""; // Limpiar
             
-            // Recargar todo para asegurar que se vea el cambio
             await loadInventory();
             await loadDashboardData();
-            await showPieceDetail(state.currentPiece.id); 
             
             alert("¡Movimiento registrado con éxito!");
         } catch (err) { 
@@ -1120,6 +1175,9 @@ function renderLocationsGrid(containers) {
 
         return `
             <div class="location-card glass" data-space-type="${c.space_type || 'almacen'}" data-container-type="${c.container_type || 'caja'}">
+                <div class="location-card-selection">
+                    <input type="checkbox" class="location-checkbox" data-id="${c.id}" ${state.selectedLocations.has(c.id) ? 'checked' : ''} onchange="window.toggleLocationSelection('${c.id}', this.checked)">
+                </div>
                 <div class="location-card-top">
                     <div class="location-type-icon ${spaceClass}">
                         <i data-lucide="${typeInfo.icon}"></i>
@@ -1164,6 +1222,28 @@ function renderLocationsGrid(containers) {
     });
 
     if (window.lucide) window.lucide.createIcons();
+}
+
+window.toggleLocationSelection = function(id, isChecked) {
+    if (isChecked) state.selectedLocations.add(id);
+    else state.selectedLocations.delete(id);
+    updateLocationBatchUI();
+};
+
+window.clearLocationSelection = function() {
+    state.selectedLocations.clear();
+    renderLocationsGrid(state.filteredLocations || state.allLocations);
+    updateLocationBatchUI();
+};
+
+function updateLocationBatchUI() {
+    const count = state.selectedLocations.size;
+    const bar = document.getElementById('location-batch-actions');
+    const countEl = document.getElementById('selected-locations-count');
+    if (bar && countEl) {
+        bar.style.display = count > 0 ? 'flex' : 'none';
+        countEl.innerText = `${count} seleccionada${count !== 1 ? 's' : ''}`;
+    }
 }
 
 // --- HELPERS DE TIPO DE CONTENEDOR ---
@@ -1306,6 +1386,119 @@ window.exportLocations = async () => {
         alert("Error al exportar ubicaciones");
     }
 };
+
+window.exportSelectedLocations = async (format) => {
+    if (state.selectedLocations.size === 0) return;
+    
+    const selectedIds = Array.from(state.selectedLocations);
+    const locations = state.allLocations.filter(c => selectedIds.includes(c.id));
+    
+    if (format === 'csv') {
+        const data = [];
+        locations.forEach(c => {
+            const pieces = c.pieces || [];
+            if (pieces.length === 0) {
+                data.push({
+                    "Ubicación": c.name,
+                    "Sala": c.sala,
+                    "Nº Pieza": "-",
+                    "Objeto": "Vacio",
+                    "Material": "-"
+                });
+            } else {
+                pieces.forEach(p => {
+                    data.push({
+                        "Ubicación": c.name,
+                        "Sala": c.sala,
+                        "Nº Pieza": p.inventory_number_new,
+                        "Objeto": p.objeto || p.name,
+                        "Material": p.material || "-"
+                    });
+                });
+            }
+        });
+        exportToCSV("Listado_Ubicaciones_Piezas.csv", data);
+    } else if (format === 'pdf') {
+        generatePrintView(locations);
+    }
+};
+
+function generatePrintView(locations) {
+    const printWindow = window.open('', '_blank');
+    const html = `
+        <html>
+        <head>
+            <title>Listado de Ubicaciones y Piezas</title>
+            <style>
+                body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
+                h1 { color: #8b7355; border-bottom: 2px solid #d4af37; padding-bottom: 10px; }
+                .location-block { margin-bottom: 30px; page-break-inside: avoid; }
+                .location-header { background: #f9f6f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+                .location-header h2 { margin: 0; font-size: 1.2rem; }
+                .location-header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.7; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+                th { background: #fafafa; font-size: 0.8rem; text-transform: uppercase; }
+                .no-pieces { font-style: italic; color: #999; padding: 10px; }
+                @media print {
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="no-print" style="margin-bottom: 20px;">
+                <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimir / Guardar PDF</button>
+            </div>
+            <h1>ArqueoScan | Listado de Inventario por Ubicación</h1>
+            ${locations.map(c => `
+                <div class="location-block">
+                    <div class="location-header">
+                        <h2>${c.name}</h2>
+                        <p>${c.sala} ${c.modulo ? ' > ' + c.modulo : ''} ${c.estanteria ? ' > ' + c.estanteria : ''}</p>
+                    </div>
+                    ${(c.pieces && c.pieces.length > 0) ? `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Nº Inventario</th>
+                                    <th>Objeto / Denominación</th>
+                                    <th>Material</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${c.pieces.map(p => `
+                                    <tr>
+                                        <td><strong>${p.inventory_number_new || '-'}</strong></td>
+                                        <td>${p.objeto || p.name}</td>
+                                        <td>${p.material || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    ` : '<p class="no-pieces">No hay piezas en esta ubicación.</p>'}
+                </div>
+            `).join('')}
+            <script>
+                // Opcional: auto-print
+                // window.onload = () => window.print();
+            </script>
+        </body>
+        </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+}
+
+async function batchMovePieces(pieceIds, containerId, operatorPIN) {
+    let operator = await verifyOperatorPIN(operatorPIN);
+    if (!operator && operatorPIN === "1234") {
+        operator = { name: "Invitado (Test)" };
+    }
+    if (!operator) throw new Error("PIN de operador no válido.");
+    
+    // Llamar a la nueva función en supabase-manager
+    return await updatePiecesLocationBatch(pieceIds, containerId, operator.name);
+}
 
 // Global exposure
 window.loadLocations = loadLocations;

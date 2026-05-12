@@ -144,6 +144,13 @@
                             <input type="text" id="inventory-search" placeholder="Buscar pieza, nº inv, material..." oninput="window.filterInventory()">
                         </div>
                         <div class="header-actions">
+                            <div id="inventory-batch-actions" style="display: none; gap: 0.5rem; align-items: center;">
+                                <span class="text-sm" id="selected-pieces-count">0 seleccionadas</span>
+                                <button class="btn-gold" onclick="window.startBatchMove()">
+                                    <i data-lucide="move"></i> Trasladar
+                                </button>
+                                <button class="btn-text" onclick="window.clearPieceSelection()">Cancelar</button>
+                            </div>
                             <button class="btn-gold" onclick="window.showAddPieceModal()">
                                 <i data-lucide="plus"></i>
                                 Nueva Pieza
@@ -165,6 +172,7 @@
                         <table id="inventory-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="inventory-select-all" onclick="window.toggleSelectAllPieces(this.checked)"></th>
                                     <th onclick="window.sortInventory('inventory_number_new')">Nº Inv <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
                                     <th onclick="window.sortInventory('inventory_number_old')">NIM <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
                                     <th>Foto</th>
@@ -188,9 +196,19 @@
                             <input type="text" id="locations-search" placeholder="Buscar ubicación..." oninput="window.filterLocations()">
                         </div>
                         <div class="header-actions">
+                            <div id="location-batch-actions" style="display: none; gap: 0.5rem; align-items: center;">
+                                <span class="text-sm" id="selected-locations-count">0 seleccionadas</span>
+                                <button class="btn-primary" onclick="window.exportSelectedLocations('pdf')">
+                                    <i data-lucide="printer"></i> Imprimir
+                                </button>
+                                <button class="btn-secondary" onclick="window.exportSelectedLocations('csv')">
+                                    <i data-lucide="download"></i> CSV
+                                </button>
+                                <button class="btn-text" onclick="window.clearLocationSelection()">Cancelar</button>
+                            </div>
                             <button class="btn-secondary" onclick="window.exportLocations()">
                                 <i data-lucide="download"></i>
-                                Exportar
+                                Exportar Todo
                             </button>
                             <button class="btn-outline" onclick="window.printFilteredLocations()" title="Imprimir Etiquetas">
                                 <i data-lucide="printer"></i>

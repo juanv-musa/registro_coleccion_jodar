@@ -1741,5 +1741,45 @@ th[onclick]:hover {
     border-radius: 4px;
     background: rgba(141, 190, 35, 0.12);
     color: var(--primary-dark);
-    margin-bottom: 0.3rem;
+
+/* --- BATCH ACTIONS & SELECTION --- */
+#inventory-batch-actions, #location-batch-actions {
+    background: var(--bg-side);
+    border: 1px solid var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(141, 190, 35, 0.15);
+    animation: slideInDown 0.3s ease-out;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.piece-checkbox, .location-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.location-card-selection {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 5;
+}
+
+.location-card {
+    position: relative;
+}
+
+#selected-pieces-count, #selected-locations-count {
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-right: 0.5rem;
 }
