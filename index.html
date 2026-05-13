@@ -149,6 +149,9 @@
                                 <button class="btn-gold" onclick="window.startBatchMove()">
                                     <i data-lucide="move"></i> Trasladar
                                 </button>
+                                <button class="btn-secondary" onclick="window.printSelectedPieces()">
+                                    <i data-lucide="printer"></i> Imprimir
+                                </button>
                                 <button class="btn-text" onclick="window.clearPieceSelection()">Cancelar</button>
                             </div>
                             <button class="btn-gold" onclick="window.showAddPieceModal()">
@@ -320,8 +323,7 @@
                     </div>
                 </section>
 
-                <!-- Container Detail View (primer bloque, se reemplaza con el correcto de abajo) -->
-                <!-- Room/Sala Detail View (NUEVO) -->
+                <!-- Room/Sala Detail View -->
                 <section id="view-room-detail" class="view" style="display: none;">
                     <div class="detail-header mb-2">
                         <button class="btn-text" onclick="showView('locations')"><i data-lucide="chevron-left"></i> Volver a Ubicaciones</button>

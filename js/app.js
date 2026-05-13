@@ -1437,8 +1437,9 @@ function generatePrintView(locations) {
                 .location-header h2 { margin: 0; font-size: 1.2rem; }
                 .location-header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.7; }
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+                th, td { border: 1px solid #eee; padding: 8px; text-align: left; vertical-align: middle; }
                 th { background: #fafafa; font-size: 0.8rem; text-transform: uppercase; }
+                .piece-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
                 .no-pieces { font-style: italic; color: #999; padding: 10px; }
                 @media print {
                     .no-print { display: none; }
@@ -1460,19 +1461,27 @@ function generatePrintView(locations) {
                         <table>
                             <thead>
                                 <tr>
+                                    <th style="width: 70px;">Imagen</th>
                                     <th style="width: 120px;">Nº Inventario</th>
                                     <th>Objeto / Denominación</th>
                                     <th>Material</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${c.pieces.map(p => `
+                                ${c.pieces.map(p => {
+                                    const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
+                                    const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
+                                    const imgSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
+                                    
+                                    return `
                                     <tr>
+                                        <td><img src="${imgSrc}" class="piece-img" onerror="this.src='img/placeholder.jpg'"></td>
                                         <td><strong>${p.inventory_number_new || '-'}</strong></td>
                                         <td>${p.objeto || p.name}</td>
                                         <td>${p.material || '-'}</td>
                                     </tr>
-                                `).join('')}
+                                    `;
+                                }).join('')}
                             </tbody>
                         </table>
                     ` : '<p class="no-pieces">No hay piezas en esta ubicación.</p>'}
@@ -1499,6 +1508,70 @@ async function batchMovePieces(pieceIds, containerId, operatorPIN) {
     // Llamar a la nueva función en supabase-manager
     return await updatePiecesLocationBatch(pieceIds, containerId, operator.name);
 }
+
+window.printSelectedPieces = function() {
+    if (state.selectedPieces.size === 0) return;
+    
+    const selectedIds = Array.from(state.selectedPieces);
+    const pieces = state.allPieces.filter(p => selectedIds.includes(p.id));
+    
+    const printWindow = window.open('', '_blank');
+    const html = `
+        <html>
+        <head>
+            <title>Listado de Piezas Seleccionadas</title>
+            <style>
+                body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
+                h1 { color: #8b7355; border-bottom: 2px solid #d4af37; padding-bottom: 10px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #eee; padding: 10px; text-align: left; vertical-align: middle; }
+                th { background: #fafafa; font-size: 0.8rem; text-transform: uppercase; }
+                .piece-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
+                @media print {
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="no-print" style="margin-bottom: 20px;">
+                <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimir / Guardar PDF</button>
+            </div>
+            <h1>ArqueoScan | Listado de Piezas Seleccionadas</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Imagen</th>
+                        <th style="width: 130px;">Nº Inventario</th>
+                        <th>Objeto / Denominación</th>
+                        <th>Material</th>
+                        <th>Ubicación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${pieces.map(p => {
+                        const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
+                        const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
+                        const imgSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
+                        const loc = p.containers ? p.containers.name : 'Sin ubicación';
+                        
+                        return `
+                        <tr>
+                            <td><img src="${imgSrc}" class="piece-img" onerror="this.src='img/placeholder.jpg'"></td>
+                            <td><strong>${p.inventory_number_new || p.id}</strong></td>
+                            <td>${p.objeto || p.name}</td>
+                            <td>${p.material || '-'}</td>
+                            <td>${loc}</td>
+                        </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+};
 
 // Global exposure
 window.loadLocations = loadLocations;
