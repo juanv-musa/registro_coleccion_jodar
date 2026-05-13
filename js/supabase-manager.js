@@ -14,13 +14,6 @@ window.initSupabase = function() {
             try {
                 dbClient = lib.createClient(config.url, config.anonKey);
                 console.log("✅ Conectado a Supabase.");
-                
-                // Escuchar cambios de autenticación
-                dbClient.auth.onAuthStateChange((event, session) => {
-                    console.log("Auth event:", event);
-                    if (window.handleAuthStateChange) window.handleAuthStateChange(event, session);
-                });
-
                 return true;
             } catch (err) { console.error(err); }
         }
@@ -34,27 +27,6 @@ window.initSupabase = function() {
             if (intentar() || r > 20) clearInterval(i);
         }, 500);
     }
-};
-
-// --- AUTHENTICATION ---
-
-window.signIn = async function(email, password) {
-    if (!dbClient) throw new Error("No hay conexión con Supabase");
-    const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-};
-
-window.signOut = async function() {
-    if (!dbClient) return;
-    const { error } = await dbClient.auth.signOut();
-    if (error) console.error("Error al cerrar sesión:", error);
-};
-
-window.getSession = async function() {
-    if (!dbClient) return null;
-    const { data: { session } } = await dbClient.auth.getSession();
-    return session;
 };
 
 // --- FUNCIONES DE DATOS ---
@@ -133,7 +105,7 @@ window.getAllContainers = async function() {
     return data || [];
 };
 
-// --- IMPORTACIÓN ---
+// --- IMPORTACIÓN (La función que daba error de length) ---
 window.bulkImportPieces = async function(pieces, containers) {
     console.log("Iniciando importación...", { piezas: pieces?.length, cajas: containers?.length });
     
@@ -156,55 +128,14 @@ window.bulkImportPieces = async function(pieces, containers) {
 
 window.verifyOperatorPIN = async function(pin) {
     if (!dbClient) return null;
-    
-    // Verificamos si hay sesión activa antes de consultar la tabla de operadores
-    const session = await window.getSession();
-    if (!session) {
-        console.warn("Intento de verificación de PIN sin sesión activa.");
-        return null;
-    }
-
-    const { data, error } = await dbClient
-        .from('operators')
-        .select('*')
-        .eq('pin', pin)
-        .eq('active', true)
-        .maybeSingle();
-        
-    if (error) {
-        console.error("Error en verifyOperatorPIN:", error);
-        return null;
-    }
-    return data;
+    const { data, error } = await dbClient.from('operators').select('*').eq('pin', pin).eq('active', true).single();
+    return error ? null : data;
 };
 
 window.getPieceById = async function(id) {
     if (!dbClient) return null;
     const { data } = await dbClient.from('pieces').select('*, containers(*)').eq('id', id).single();
     return data;
-};
-
-window.createPiece = async function(pieceData) {
-    if (!dbClient) throw new Error("No hay conexión con la base de datos");
-    // Si no viene ID, generamos uno temporal estilo P-TIMESTAMP
-    if (!pieceData.id) pieceData.id = `P-${Date.now()}`;
-    const { data, error } = await dbClient.from('pieces').insert([pieceData]).select();
-    if (error) throw error;
-    return data[0];
-};
-
-window.updatePiece = async function(id, updates) {
-    if (!dbClient) throw new Error("No hay conexión con la base de datos");
-    const { data, error } = await dbClient.from('pieces').update(updates).eq('id', id).select();
-    if (error) throw error;
-    return data[0];
-};
-
-window.deletePiece = async function(id) {
-    if (!dbClient) throw new Error("No hay conexión con la base de datos");
-    const { error } = await dbClient.from('pieces').delete().eq('id', id);
-    if (error) throw error;
-    return true;
 };
 
 // --- MOVIMIENTOS Y UBICACIONES ---
@@ -234,33 +165,6 @@ window.updatePieceLocation = async function(pieceId, containerId, operatorId) {
     return true;
 };
 
-window.updatePiecesLocationBatch = async function(pieceIds, containerId, operatorId) {
-    if (!dbClient) throw new Error("No hay conexión con la base de datos");
-    
-    // 1. Obtener ubicaciones actuales para el historial
-    const { data: currentPieces } = await dbClient.from('pieces').select('id, container_id').in('id', pieceIds);
-    
-    // 2. Actualizar las piezas en lote
-    const { error: pErr } = await dbClient.from('pieces')
-        .update({ container_id: containerId, updated_at: new Date() })
-        .in('id', pieceIds);
-    if (pErr) throw pErr;
-
-    // 3. Registrar los movimientos en el historial
-    const movements = currentPieces.map(p => ({
-        piece_id: p.id,
-        origin_container_id: p.container_id,
-        destination_container_id: containerId,
-        operator_id: operatorId,
-        timestamp: new Date()
-    }));
-    
-    const { error: mErr } = await dbClient.from('movements').insert(movements);
-    if (mErr) throw mErr;
-
-    return true;
-};
-
 window.createContainer = async function(containerData) {
     if (!dbClient) throw new Error("No hay conexión con la base de datos");
     const { data, error } = await dbClient.from('containers').upsert(containerData);
@@ -272,13 +176,6 @@ window.getContainerById = async function(id) {
     if (!dbClient) return null;
     const { data } = await dbClient.from('containers').select('*, pieces(*)').eq('id', id).single();
     return data;
-};
-
-window.deleteContainer = async function(id) {
-    if (!dbClient) throw new Error("No hay conexión con la base de datos");
-    const { error } = await dbClient.from('containers').delete().eq('id', id);
-    if (error) throw error;
-    return true;
 };
 
 // --- USUARIOS / OPERADORES ---
