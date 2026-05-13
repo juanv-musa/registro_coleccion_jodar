@@ -81,7 +81,14 @@ function mapToSupabase(data, containerId) {
             objeto: objeto,
             section: getVal(['SECCIÓN']) || null,
             subsection: getVal(['SUBSECCIÓN']) || null,
-            material: getVal(['MATERIA', 'TÉCNICA', 'MATERIAL']) || 'Desconocido',
+            material: (() => {
+                const m1 = getVal(['MATERIA']) || '';
+                const m2 = getVal(['MATERIAL', 'TÉCNICA']) || '';
+                if (m1 && m2 && m1.toString().trim() !== m2.toString().trim()) {
+                    return `${m1} / ${m2}`;
+                }
+                return (m1 || m2 || 'Desconocido').toString().trim();
+            })(),
             chronology: getVal(['EPOCA', 'DATACIÓN', 'CRONOLOGÍA']) || 'Desconocida',
             author: getVal(['AUTOR']) || null,
             provenance: getVal(['PROCEDENCIA', 'PROCEDENCIA ']) || null,

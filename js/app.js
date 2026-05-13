@@ -120,8 +120,8 @@ function populateImportDestinationSelect(containers) {
     const optAlmacen = document.getElementById('opt-almacen');
     const optSala = document.getElementById('opt-sala');
     
-    optAlmacen.innerHTML = '';
-    optSala.innerHTML = '';
+    if (optAlmacen) optAlmacen.innerHTML = '';
+    if (optSala) optSala.innerHTML = '';
     
     containers.forEach(c => {
         const option = document.createElement('option');
@@ -131,9 +131,9 @@ function populateImportDestinationSelect(containers) {
         // Clasificación simple basada en el nombre de la sala o el nombre del contenedor
         const salaName = (c.sala || '').toLowerCase();
         if (salaName.includes('almacen') || salaName.includes('reserva')) {
-            optAlmacen.appendChild(option);
+            if (optAlmacen) optAlmacen.appendChild(option);
         } else {
-            optSala.appendChild(option);
+            if (optSala) optSala.appendChild(option);
         }
     });
 }
@@ -175,13 +175,15 @@ async function handleLogin(e) {
     const errorEl = document.getElementById('login-error');
 
     try {
-        errorEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'none';
         await signIn(email, password);
         // El handleAuthStateChange se encargará de redirigir
     } catch (err) {
         console.error("Login Error:", err);
-        errorEl.style.display = 'block';
-        errorEl.innerText = "Error: " + (err.message || "Credenciales inválidas");
+        if (errorEl) {
+            errorEl.style.display = 'block';
+            errorEl.innerText = "Error: " + (err.message || "Credenciales inválidas");
+        }
     }
 }
 
@@ -1239,7 +1241,7 @@ window.clearLocationSelection = function() {
 function updateLocationBatchUI() {
     const count = state.selectedLocations.size;
     const bar = document.getElementById('location-batch-actions');
-    const countEl = document.getElementById('selected-locations-count');
+    const countEl = document.getElementById('selected-pieces-count');
     if (bar && countEl) {
         bar.style.display = count > 0 ? 'flex' : 'none';
         countEl.innerText = `${count} seleccionada${count !== 1 ? 's' : ''}`;
@@ -1344,7 +1346,7 @@ window.exportInventory = () => {
         "Num_Inv_Nuevo": p.inventory_number_new,
         "Num_Inv_Antiguo": p.inventory_number_old,
         "Objeto": p.objeto || p.name,
-        "Material": p.material,
+        "Materia": p.material,
         "Cronologia": p.chronology,
         "Ubicacion": p.containers ? p.containers.name : "Sin ubicación",
         "Sala": p.containers ? p.containers.sala : "-"
@@ -1391,28 +1393,46 @@ window.exportSelectedLocations = async (format) => {
     if (state.selectedLocations.size === 0) return;
     
     const selectedIds = Array.from(state.selectedLocations);
-    const locations = state.allLocations.filter(c => selectedIds.includes(c.id));
+    // Ordenar ubicaciones por Sala y luego por Nombre
+    const locations = state.allLocations
+        .filter(c => selectedIds.includes(c.id))
+        .sort((a, b) => {
+            const salaA = (a.sala || "").toLowerCase();
+            const salaB = (b.sala || "").toLowerCase();
+            if (salaA !== salaB) return salaA.localeCompare(salaB);
+            
+            const nameA = (a.name || "").toLowerCase();
+            const nameB = (b.name || "").toLowerCase();
+            return nameA.localeCompare(nameB, undefined, { numeric: true });
+        });
     
     if (format === 'csv') {
         const data = [];
         locations.forEach(c => {
             const pieces = c.pieces || [];
-            if (pieces.length === 0) {
+            // Ordenar piezas correlativamente por Nº Inv Nuevo
+            const sortedPieces = [...pieces].sort((p1, p2) => {
+                const invA = (p1.inventory_number_new || "").toString();
+                const invB = (p2.inventory_number_new || "").toString();
+                return invA.localeCompare(invB, undefined, { numeric: true });
+            });
+
+            if (sortedPieces.length === 0) {
                 data.push({
                     "Ubicación": c.name,
                     "Sala": c.sala,
                     "Nº Pieza": "-",
                     "Objeto": "Vacio",
-                    "Material": "-"
+                    "Materia": "-"
                 });
             } else {
-                pieces.forEach(p => {
+                sortedPieces.forEach(p => {
                     data.push({
                         "Ubicación": c.name,
                         "Sala": c.sala,
                         "Nº Pieza": p.inventory_number_new,
                         "Objeto": p.objeto || p.name,
-                        "Material": p.material || "-"
+                        "Materia": p.material || "-"
                     });
                 });
             }
@@ -1451,24 +1471,32 @@ function generatePrintView(locations) {
                 <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimir / Guardar PDF</button>
             </div>
             <h1>ArqueoScan | Listado de Inventario por Ubicación</h1>
-            ${locations.map(c => `
+            ${locations.map(c => {
+                // Ordenar piezas para la vista de impresión
+                const pieces = (c.pieces || []).sort((p1, p2) => {
+                    const invA = (p1.inventory_number_new || "").toString();
+                    const invB = (p2.inventory_number_new || "").toString();
+                    return invA.localeCompare(invB, undefined, { numeric: true });
+                });
+
+                return `
                 <div class="location-block">
                     <div class="location-header">
                         <h2>${c.name}</h2>
                         <p>${c.sala} ${c.modulo ? ' > ' + c.modulo : ''} ${c.estanteria ? ' > ' + c.estanteria : ''}</p>
                     </div>
-                    ${(c.pieces && c.pieces.length > 0) ? `
+                    ${(pieces.length > 0) ? `
                         <table>
                             <thead>
                                 <tr>
                                     <th style="width: 70px;">Imagen</th>
                                     <th style="width: 120px;">Nº Inventario</th>
                                     <th>Objeto / Denominación</th>
-                                    <th>Material</th>
+                                    <th>Materia</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${c.pieces.map(p => {
+                                ${pieces.map(p => {
                                     const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
                                     const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
                                     const imgSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
@@ -1486,7 +1514,8 @@ function generatePrintView(locations) {
                         </table>
                     ` : '<p class="no-pieces">No hay piezas en esta ubicación.</p>'}
                 </div>
-            `).join('')}
+                `;
+            }).join('')}
             <script>
                 // Opcional: auto-print
                 // window.onload = () => window.print();
@@ -1543,7 +1572,7 @@ window.printSelectedPieces = function() {
                         <th style="width: 90px;">Imagen</th>
                         <th style="width: 130px;">Nº Inventario</th>
                         <th>Objeto / Denominación</th>
-                        <th>Material</th>
+                        <th>Materia</th>
                         <th>Ubicación</th>
                     </tr>
                 </thead>
@@ -1673,7 +1702,7 @@ window.showEditLocationModal = async function(id) {
         if (document.getElementById('new-cont-balda')) document.getElementById('new-cont-balda').value = container.balda || '';
 
         // Tipo de espacio
-        const radioEl = document.getElementById(`space-type-${spaceType}`);
+        const radioEl = document.getElementById(\`space-type-\${spaceType}\`);
         if (radioEl) radioEl.checked = true;
 
         // Tipo de contenedor: pre-seleccionar
@@ -1713,7 +1742,7 @@ async function showRoomDetailBySlug(salaSlug) {
         });
 
         if (matchingContainers.length === 0) {
-            alert(`No se encontró la sala con QR: S-${salaSlug}`);
+            alert(\`No se encontró la sala con QR: S-\${salaSlug}\`);
             return;
         }
 
@@ -1746,12 +1775,12 @@ function renderRoomDetail(room) {
 
     const isExpo = room.space_type === 'exposicion';
     labelEl.innerText = isExpo ? 'Sala de Exposición' : 'Almacén';
-    labelEl.className = `room-type-label ${isExpo ? 'exposicion' : 'almacen'}`;
-    iconEl.innerHTML = `<i data-lucide="${isExpo ? 'landmark' : 'warehouse'}"></i>`;
+    labelEl.className = \`room-type-label \${isExpo ? 'exposicion' : 'almacen'}\`;
+    iconEl.innerHTML = \`<i data-lucide="\${isExpo ? 'landmark' : 'warehouse'}"></i>\`;
 
     const containers = room.containers || [];
     const totalPieces = containers.reduce((sum, c) => sum + (c.pieces || []).length, 0);
-    statsEl.innerText = `${containers.length} contenedor${containers.length !== 1 ? 'es' : ''} · ${totalPieces} pieza${totalPieces !== 1 ? 's' : ''}`;
+    statsEl.innerText = \`\${containers.length} contenedor\${containers.length !== 1 ? 'es' : ''} · \${totalPieces} pieza\${totalPieces !== 1 ? 's' : ''}\`;
 
     if (containers.length === 0) {
         accordion.innerHTML = '<div class="glass p-2"><p class="empty-state">Esta sala no tiene contenedores registrados.</p></div>';
@@ -1766,32 +1795,32 @@ function renderRoomDetail(room) {
 
         const piecesHtml = pieces.length === 0
             ? '<p class="empty-state" style="padding: 0.75rem 1rem;">Contenedor vacío</p>'
-            : pieces.map(p => `
-                <div class="room-piece-item" onclick="window.showPieceDetail('${p.id}')">
-                    <span class="badge-id">${p.inventory_number_new || p.id}</span>
-                    <span class="room-piece-name">${p.objeto || p.name || 'Sin nombre'}</span>
+            : pieces.map(p => \`
+                <div class="room-piece-item" onclick="window.showPieceDetail('\${p.id}')">
+                    <span class="badge-id">\${p.inventory_number_new || p.id}</span>
+                    <span class="room-piece-name">\${p.objeto || p.name || 'Sin nombre'}</span>
                     <i data-lucide="chevron-right" style="color:var(--primary);flex-shrink:0;"></i>
                 </div>
-            `).join('');
+            \`).join('');
 
-        return `
+        return \`
             <div class="accordion-item glass mb-1">
-                <button class="accordion-header ${isOpen ? 'open' : ''}" onclick="window.toggleAccordion(this)">
+                <button class="accordion-header \${isOpen ? 'open' : ''}" onclick="window.toggleAccordion(this)">
                     <div class="accordion-header-left">
-                        <i data-lucide="${typeInfo.icon}"></i>
-                        <strong>${c.name}</strong>
-                        <span class="accordion-type-label">${typeInfo.label}</span>
+                        <i data-lucide="\${typeInfo.icon}"></i>
+                        <strong>\${c.name}</strong>
+                        <span class="accordion-type-label">\${typeInfo.label}</span>
                     </div>
                     <div class="accordion-header-right">
-                        <span class="badge">${pieces.length} pieza${pieces.length !== 1 ? 's' : ''}</span>
-                        <i data-lucide="${isOpen ? 'chevron-up' : 'chevron-down'}" class="accordion-arrow"></i>
+                        <span class="badge">\${pieces.length} pieza\${pieces.length !== 1 ? 's' : ''}</span>
+                        <i data-lucide="\${isOpen ? 'chevron-up' : 'chevron-down'}" class="accordion-arrow"></i>
                     </div>
                 </button>
-                <div class="accordion-body ${isOpen ? 'open' : ''}">
-                    ${piecesHtml}
+                <div class="accordion-body \${isOpen ? 'open' : ''}">
+                    \${piecesHtml}
                 </div>
             </div>
-        `;
+        \`;
     }).join('');
 
     if (window.lucide) window.lucide.createIcons();
