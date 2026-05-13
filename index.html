@@ -86,7 +86,7 @@
                 <button id="btn-logout" title="Salir"><i data-lucide="log-out"></i></button>
             </div>
             <div class="sidebar-footer">
-                <span class="version-tag">Musaraña 2026 | v1.1.1</span>
+                <span class="version-tag">Musaraña 2026 | v1.2.1</span>
             </div>
         </aside>
 
@@ -109,53 +109,31 @@
                 <section id="view-dashboard" class="view">
                     <!-- Stats Grid -->
                     <div class="stats-grid">
-                        <div class="stat-card glass">
+                        <div class="stat-card glass clickable" onclick="showView('inventory')">
                             <div class="stat-icon"><i data-lucide="gem"></i></div>
                             <div class="stat-content">
                                 <h3>Total Piezas</h3>
                                 <div class="stat-value" id="stats-total">0</div>
                             </div>
                         </div>
-                        <div class="stat-card glass">
+                        <div class="stat-card glass clickable" onclick="showView('dashboard')">
                             <div class="stat-icon"><i data-lucide="zap"></i></div>
                             <div class="stat-content">
                                 <h3>Movimientos Hoy</h3>
                                 <div class="stat-value" id="stats-today">0</div>
                             </div>
                         </div>
-                        <div class="stat-card glass">
-                            <div class="stat-icon"><i data-lucide="warehouse"></i></div>
-                            <div class="stat-content">
-                                <h3>Salas Activas</h3>
-                                <div class="stat-value" id="stats-rooms">0</div>
-                            </div>
-                        </div>
-                        <div class="stat-card glass gold">
-                            <div class="stat-icon"><i data-lucide="shield-check"></i></div>
-                            <div class="stat-content">
-                                <h3>Integridad Datos</h3>
-                                <div class="stat-value" id="stats-quality">0%</div>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- Enhanced Dashboard Grid -->
+                    <!-- Dashboard Panels -->
                     <div class="dashboard-panels mt-2">
                         <div class="panel glass p-2">
-                            <div class="panel-header-simple">
-                                <i data-lucide="bar-chart-3"></i>
-                                <h3>Distribución por Materia</h3>
-                            </div>
-                            <div id="material-distribution-chart" class="custom-chart-container">
-                                <!-- Se llena dinámicamente -->
-                                <p class="empty-state">Calculando distribución...</p>
-                            </div>
-                        </div>
-
-                        <div class="panel glass p-2">
-                            <div class="panel-header-simple">
-                                <i data-lucide="history"></i>
-                                <h3>Actividad Reciente</h3>
+                            <div class="panel-header-simple" style="justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <i data-lucide="history"></i>
+                                    <h3>Actividad Reciente</h3>
+                                </div>
+                                <button class="btn-icon" onclick="window.exportMovements()" title="Exportar historial completo"><i data-lucide="download"></i></button>
                             </div>
                             <div id="recent-movements-list" class="log-list">
                                 <p class="empty-state">No hay registros recientes</p>
@@ -189,9 +167,6 @@
                             <button class="btn-secondary" onclick="window.exportInventory()">
                                 <i data-lucide="download"></i>
                                 Exportar
-                            </button>
-                            <button class="btn-outline" onclick="window.printFilteredPieces()" title="Imprimir Etiquetas">
-                                <i data-lucide="printer"></i>
                             </button>
                             <button class="btn-primary" onclick="window.loadInventory()" title="Actualizar">
                                 <i data-lucide="refresh-cw"></i>
@@ -241,9 +216,6 @@
                                 <i data-lucide="download"></i>
                                 Exportar Todo
                             </button>
-                            <button class="btn-outline" onclick="window.printFilteredLocations()" title="Imprimir Etiquetas">
-                                <i data-lucide="printer"></i>
-                            </button>
                             <button class="btn-gold" onclick="showAddContainerModal()">
                                 <i data-lucide="plus"></i>
                                 Nueva Ubicación
@@ -262,27 +234,19 @@
                         <button class="filter-chip" data-filter="exposicion" onclick="window.setLocationFilter('exposicion', this)">
                             <i data-lucide="landmark"></i> Exposición
                         </button>
-                        <span class="filter-sep">|</span>
-                        <button class="filter-chip sm" data-subfilter="caja" onclick="window.setSubtypeFilter('caja', this)"><i data-lucide="package"></i> Caja</button>
-                        <button class="filter-chip sm" data-subfilter="pale" onclick="window.setSubtypeFilter('pale', this)"><i data-lucide="pallet"></i> Palé</button>
-                        <button class="filter-chip sm" data-subfilter="vitrina" onclick="window.setSubtypeFilter('vitrina', this)"><i data-lucide="picture-in-picture"></i> Vitrina</button>
-                        <button class="filter-chip sm" data-subfilter="peana" onclick="window.setSubtypeFilter('peana', this)"><i data-lucide="cylinder"></i> Peana</button>
                     </div>
                     
                     <div class="locations-grid" id="locations-list">
                         <!-- Se llena con JS -->
                     </div>
                 </section>
+
                 <!-- Scanner View -->
                 <section id="view-scanner" class="view" style="display: none;">
                     <div class="scanner-container-wrapper">
                         <div class="scanner-container glass">
                             <div id="qr-reader"></div>
                             <div class="scanner-status" id="scanner-mode-text">Modo: Identificación</div>
-                        </div>
-                        <div class="scanner-instructions glass mt-2">
-                            <i data-lucide="info"></i>
-                            <p id="scanner-tip">Escanea una PIEZA para ver info o un CONTENEDOR para ver su contenido.</p>
                         </div>
                     </div>
                 </section>
@@ -294,80 +258,46 @@
                         <button id="btn-edit-piece" class="btn-outline" style="margin-left: auto;" onclick="window.showEditPieceModal(state.currentPiece.id)">
                             <i data-lucide="edit-3"></i> Editar
                         </button>
-                        <button id="btn-delete-piece" class="btn-icon btn-danger" style="margin-left: 0.5rem;" onclick="window.handleDeletePiece(state.currentPiece.id)" title="Eliminar pieza">
-                            <i data-lucide="trash-2"></i>
-                        </button>
                     </div>
                     <div class="detail-grid">
-                    <div class="detail-main glass">
-                        <div class="piece-image-header" id="detail-image-container" style="display: none;">
-                            <img src="" alt="Foto de la pieza" id="detail-image" class="piece-detail-img">
-                        </div>
-                        <div class="piece-title-area">
+                        <div class="detail-main glass">
+                            <div class="piece-image-header" id="detail-image-container" style="display: none;">
+                                <img src="" alt="Foto de la pieza" id="detail-image" class="piece-detail-img">
+                            </div>
+                            <div class="piece-title-area">
                                 <h2 id="detail-name">Nombre de la Pieza</h2>
-                                <p id="detail-denominacion" class="text-muted" style="font-size: 0.9rem; margin-top: -0.5rem;"></p>
+                                <p id="detail-denominacion" class="text-muted" style="font-size: 0.9rem;"></p>
                                 <span class="badge" id="detail-inv-new">P-XXX</span>
                             </div>
                             <div class="tags">
                                 <span class="tag" id="detail-material">Materia</span>
                                 <span class="tag gold" id="detail-chronology">Cronología</span>
-                                <span class="tag status-tag" id="detail-status">Estado</span>
                             </div>
                             
                             <div class="location-box glass">
-                                <h3>Contenedor Actual</h3>
+                                <h3>Ubicación Actual</h3>
                                 <div class="path" id="detail-container-name">CAJA NOMBRE</div>
                                 <div class="sub-path" id="detail-full-path">SALA > MODULO > ESTANTERIA</div>
                                 <button id="btn-start-move" class="btn-gold">Trasladar Pieza <i data-lucide="move"></i></button>
                             </div>
 
-                            <div class="technical-details glass mt-2">
+                            <div class="technical-details mt-2">
                                 <h3>Ficha Técnica</h3>
                                 <div class="tech-grid">
                                     <div class="tech-item"><span>Dimensiones:</span> <strong id="detail-dimensions">-</strong></div>
                                     <div class="tech-item"><span>Procedencia:</span> <strong id="detail-provenance">-</strong></div>
                                     <div class="tech-item"><span>Autor:</span> <strong id="detail-author">-</strong></div>
-                                    <div class="tech-item"><span>Sección:</span> <strong id="detail-section">-</strong></div>
                                 </div>
                                 <div class="mt-2">
                                     <span>Descripción:</span>
                                     <p id="detail-description" class="text-sm mt-1">-</p>
                                 </div>
-                                <div class="mt-1">
-                                    <span>Observaciones:</span>
-                                    <p id="detail-observations" class="text-sm italic mt-1">-</p>
-                                </div>
-                            </div>
-
-                            <div class="history-area mt-2">
-                                <h3>Historial de Movimientos</h3>
-                                <div id="detail-history" class="history-list"></div>
                             </div>
                         </div>
                         <div class="detail-side glass">
                             <h3>QR de la Pieza</h3>
                             <div id="piece-qr-display" class="qr-container"></div>
-                            <button id="btn-print-qr" class="btn-outline w-100" title="Imprimir QR Pieza"><i data-lucide="printer"></i></button>
                         </div>
-                    </div>
-                </section>
-
-                <!-- Room/Sala Detail View -->
-                <section id="view-room-detail" class="view" style="display: none;">
-                    <div class="detail-header mb-2">
-                        <button class="btn-text" onclick="showView('locations')"><i data-lucide="chevron-left"></i> Volver a Ubicaciones</button>
-                        <button class="btn-outline" id="btn-print-room-qr" title="Imprimir QR de esta Sala"><i data-lucide="printer"></i> QR Sala</button>
-                    </div>
-                    <div class="room-detail-header glass mb-2">
-                        <div class="room-type-icon" id="room-type-icon"><i data-lucide="warehouse"></i></div>
-                        <div class="room-detail-info">
-                            <span class="room-type-label" id="room-type-label">Almacén</span>
-                            <h2 id="room-detail-name">Nombre de la Sala</h2>
-                            <p class="text-muted" id="room-detail-stats">0 contenedores · 0 piezas</p>
-                        </div>
-                    </div>
-                    <div id="room-containers-accordion">
-                        <!-- Acordeón de contenedores con sus piezas, generado por JS -->
                     </div>
                 </section>
 
@@ -376,41 +306,18 @@
                     <div class="import-card glass">
                         <i data-lucide="upload-cloud"></i>
                         <h2>Importación de Datos</h2>
-                        <p>1. Selecciona el destino de las piezas:</p>
-                        
-                        <div class="destination-selector mb-2">
-                            <select id="import-destination-select" class="glass-input">
-                                <option value="">-- Sin ubicación (Solo registrar) --</option>
-                                <optgroup label="Almacén" id="opt-almacen"></optgroup>
-                                <optgroup label="Sala Expositiva" id="opt-sala"></optgroup>
-                            </select>
-                        </div>
-
-                        <p>2. Sube tu archivo (.csv, .xlsx):</p>
                         <input type="file" id="csv-input" accept=".csv, .xlsx, .xls" style="display: none;">
                         <button onclick="document.getElementById('csv-input').click()" class="btn-gold">Seleccionar Archivo</button>
                         
-                        <div id="import-preview-status" class="mt-2 text-sm"></div>
-                        
                         <div id="import-preview-container" class="preview-table-container glass mt-2" style="display: none;">
                             <div class="preview-header">
-                                <h3>Vista Previa (Primeras 5 piezas)</h3>
-                                <button id="btn-confirm-import" class="btn-gold">Confirmar Subida <i data-lucide="check-circle"></i></button>
+                                <h3>Vista Previa</h3>
+                                <button id="btn-confirm-import" class="btn-gold">Confirmar Subida</button>
                             </div>
                             <table class="preview-table">
-                                <thead>
-                                    <tr>
-                                        <th>NUMERACIÓN</th>
-                                        <th>TÍTULO</th>
-                                        <th>PROCEDENCIA</th>
-                                        <th>DIMENSIONES</th>
-                                    </tr>
-                                </thead>
                                 <tbody id="import-preview-body"></tbody>
                             </table>
                         </div>
-
-                        <div id="import-preview" class="preview-area"></div>
                     </div>
                 </section>
 
@@ -420,282 +327,89 @@
                         <button class="btn-text" id="btn-back-from-container"><i data-lucide="chevron-left"></i> Volver</button>
                     </div>
                     <div class="container-detail-header glass mb-2">
-                        <div class="cont-type-icon" id="cont-type-icon"><i data-lucide="package"></i></div>
+                        <div class="cont-type-icon"><i data-lucide="package"></i></div>
                         <div>
-                            <span class="cont-type-label" id="cont-type-label">Caja</span>
                             <h2 id="cont-detail-name">Nombre del Contenedor</h2>
                             <p id="cont-detail-path" class="text-muted">Sala > Módulo > Estantería</p>
                         </div>
                     </div>
                     <div class="glass p-2">
                         <h3 id="cont-piece-count" style="margin-bottom:1rem;">0 Piezas dentro</h3>
-                        <div id="cont-pieces-list" class="pieces-scroll-list">
-                            <!-- JS will populate -->
-                        </div>
+                        <div id="cont-pieces-list" class="pieces-scroll-list"></div>
                     </div>
                 </section>
 
                 <!-- Users View -->
                 <section id="view-users" class="view" style="display: none;">
                     <div class="table-actions mb-2" style="justify-content: flex-end;">
-                        <div class="header-actions">
-                            <button class="btn-gold" onclick="showAddUserModal()">
-                                <i data-lucide="user-plus"></i>
-                                Nuevo Operario
-                            </button>
-                        </div>
+                        <button class="btn-gold" onclick="showAddUserModal()">Nuevo Operario</button>
                     </div>
-                    <div class="locations-grid" id="users-list">
-                        <!-- Lista de usuarios poblada por JS -->
-                    </div>
+                    <div class="locations-grid" id="users-list"></div>
                 </section>
             </div>
         </main>
     </div>
 
-    <!-- Login Overlay (Supabase Auth) -->
+    <!-- Login Overlay -->
     <div id="login-overlay" class="overlay">
         <div class="login-card glass">
             <img src="assets/logo.png" alt="ArqueoScan" class="login-logo">
             <h2>Acceso al Sistema</h2>
-            <p>Identifícate con tu cuenta de ArqueoScan</p>
-            
             <form id="form-login" class="mt-2">
                 <div class="form-group mb-1">
                     <label>Correo Electrónico</label>
-                    <input type="email" id="login-email" class="glass-input" placeholder="ejemplo@email.com" required>
+                    <input type="email" id="login-email" class="glass-input" required>
                 </div>
                 <div class="form-group mb-1">
                     <label>Contraseña</label>
-                    <input type="password" id="login-password" class="glass-input" placeholder="••••••••" required>
+                    <input type="password" id="login-password" class="glass-input" required>
                 </div>
                 <button type="submit" class="btn-gold w-100 mt-1">Iniciar Sesión</button>
-                <p id="login-error" class="error-text mt-1" style="display: none;">Credenciales incorrectas o cuenta no autorizada.</p>
+                <p id="login-error" class="error-text mt-1" style="display: none;">Credenciales incorrectas.</p>
             </form>
-            
-            <div class="login-footer mt-2">
-                <p class="text-xs opacity-50">Si no tienes cuenta, contacta con el administrador.</p>
-            </div>
         </div>
     </div>
 
-    <!-- Move Piece Modal -->
+    <!-- Modals -->
     <div id="move-modal" class="modal-overlay" style="display: none;">
         <div class="modal glass">
             <h2>Trasladar Pieza</h2>
-            <p id="move-piece-info" class="mb-2">Moviendo P-XXX</p>
-            
-            <div class="move-step-1" id="move-step-scan">
-                <div class="scanner-mini-placeholder glass mb-2">
-                    <i data-lucide="scan-face" size="48"></i>
-                    <p>Escanea el QR del CONTENEDOR de destino</p>
-                </div>
-                <button id="btn-open-move-scanner" class="btn-gold w-100">Abrir Escáner <i data-lucide="camera"></i></button>
-                <button id="btn-remove-location" class="btn-outline w-100 mt-1">
-                    <i data-lucide="map-pin-off"></i> Quitar Ubicación (Sin Destino)
-                </button>
+            <div id="move-step-scan">
+                <button id="btn-open-move-scanner" class="btn-gold w-100">Escanea Destino</button>
+                <button id="btn-remove-location" class="btn-outline w-100 mt-1">Quitar Ubicación</button>
             </div>
-
-            <div class="move-step-2" id="move-step-confirm" style="display: none;">
-                <p>Destino detectado:</p>
-                <div class="dest-preview glass">
-                    <strong id="dest-name">Caja de Madera 42</strong>
-                    <p id="dest-path">SALA A > MODULO B</p>
-                </div>
-                
-                <div class="form-group mt-2">
-                    <label>Autorizar con PIN de Operario</label>
-                    <input type="password" id="move-auth-pin" class="glass-input" placeholder="****" maxlength="4" inputmode="numeric">
-                </div>
-
-                <div class="modal-actions mt-2">
-                    <button id="btn-confirm-move" class="btn-gold">Confirmar Movimiento</button>
-                </div>
+            <div id="move-step-confirm" style="display: none;">
+                <p id="dest-name"></p>
+                <input type="password" id="move-auth-pin" class="glass-input" placeholder="PIN Operario">
+                <button id="btn-confirm-move" class="btn-gold w-100 mt-1">Confirmar</button>
             </div>
-            
-            <div class="modal-actions mt-1">
-                <button id="btn-cancel-move" class="btn-text">Cancelar</button>
-            </div>
+            <button id="btn-cancel-move" class="btn-text mt-1">Cancelar</button>
         </div>
     </div>
 
-    <!-- Add Container Modal (Rediseñado v0.0.2) -->
     <div id="add-container-modal" class="modal-overlay" style="display: none;">
-        <div class="modal glass modal-wide">
+        <div class="modal glass">
             <h2 id="modal-container-title">Nueva Ubicación</h2>
-            <form id="form-add-container" class="mt-2">
+            <form id="form-add-container">
                 <input type="hidden" id="edit-cont-id" value="">
-
-                <!-- Tipo de espacio -->
                 <div class="form-group mb-1">
-                    <label>Tipo de Espacio</label>
-                    <div class="space-type-selector">
-                        <label class="space-type-option" id="opt-almacen-label">
-                            <input type="radio" name="space-type" id="space-type-almacen" value="almacen" checked onchange="window.onSpaceTypeChange('almacen')">
-                            <span>
-                                <i data-lucide="warehouse"></i>
-                                Almacén
-                            </span>
-                        </label>
-                        <label class="space-type-option" id="opt-exposicion-label">
-                            <input type="radio" name="space-type" id="space-type-exposicion" value="exposicion" onchange="window.onSpaceTypeChange('exposicion')">
-                            <span>
-                                <i data-lucide="landmark"></i>
-                                Exposición
-                            </span>
-                        </label>
-                    </div>
+                    <label>Sala</label>
+                    <input type="text" id="new-cont-sala" class="glass-input" required>
                 </div>
-
-                <!-- Nombre de la sala/espacio -->
                 <div class="form-group mb-1">
-                    <label>Sala / Habitación</label>
-                    <input type="text" id="new-cont-sala" class="glass-input" placeholder="Ej: Almacén Norte, Sala 3" required>
+                    <label>Nombre</label>
+                    <input type="text" id="new-cont-name" class="glass-input" required>
                 </div>
-
-                <!-- Subtipo de contenedor -->
                 <div class="form-group mb-1">
-                    <label>Tipo de Contenedor</label>
-                    <div class="container-type-grid" id="container-type-grid">
-                        <!-- Se rellena dinámicamente por JS según el tipo de espacio -->
-                    </div>
-                    <input type="hidden" id="new-cont-type" value="caja">
+                    <label>Tipo</label>
+                    <select id="new-cont-type" class="glass-input">
+                        <option value="caja">Caja</option>
+                        <option value="vitrina">Vitrina</option>
+                    </select>
                 </div>
-
-                <!-- Nombre del contenedor -->
-                <div class="form-group mb-1">
-                    <label>Nombre / ID del Contenedor</label>
-                    <input type="text" id="new-cont-name" class="glass-input" placeholder="Ej: Caja 42, Vitrina Centro" required>
-                </div>
-
-                <!-- Campos de jerarquía — solo Almacén -->
-                <div id="almacen-hierarchy-fields">
-                    <div class="grid-2">
-                        <div class="form-group mb-1">
-                            <label>Módulo <span class="text-muted" style="font-size:0.75rem;">(opcional)</span></label>
-                            <input type="text" id="new-cont-modulo" class="glass-input" placeholder="M-1">
-                        </div>
-                        <div class="form-group mb-1">
-                            <label>Estantería <span class="text-muted" style="font-size:0.75rem;">(opcional)</span></label>
-                            <input type="text" id="new-cont-estanteria" class="glass-input" placeholder="E-3">
-                        </div>
-                    </div>
-                    <div class="form-group mb-1">
-                        <label>Balda <span class="text-muted" style="font-size:0.75rem;">(opcional)</span></label>
-                        <input type="text" id="new-cont-balda" class="glass-input" placeholder="Ej: B-2">
-                    </div>
-                </div>
-                
                 <div class="modal-actions mt-2">
                     <button type="button" onclick="closeAddContainerModal()" class="btn-text">Cancelar</button>
-                    <button type="submit" id="btn-submit-container" class="btn-gold">Crear Ubicación</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add/Edit Piece Modal -->
-    <div id="add-piece-modal" class="modal-overlay" style="display: none;">
-        <div class="modal glass modal-wide">
-            <h2 id="modal-piece-title">Nueva Pieza</h2>
-            <form id="form-add-piece" class="mt-2">
-                <input type="hidden" id="edit-piece-id" value="">
-                
-                <div class="grid-2">
-                    <div class="form-group mb-1">
-                        <label>Nº Inventario (Nuevo)</label>
-                        <input type="text" id="piece-inv-new" class="glass-input" placeholder="Ej: P-001" required>
-                    </div>
-                    <div class="form-group mb-1">
-                        <label>NIM (Nº Inv Antiguo)</label>
-                        <input type="text" id="piece-inv-old" class="glass-input" placeholder="Ej: 1234-A">
-                    </div>
-                </div>
-
-                <div class="form-group mb-1">
-                    <label>Objeto / Nombre Principal</label>
-                    <input type="text" id="piece-objeto" class="glass-input" placeholder="Ej: Cuenco, Hacha, etc." required>
-                </div>
-
-                <div class="form-group mb-1">
-                    <label>Denominación / Título</label>
-                    <input type="text" id="piece-name" class="glass-input" placeholder="Ej: Cuenco de cerámica campaniforme">
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group mb-1">
-                        <label>Materia</label>
-                        <input type="text" id="piece-material" class="glass-input" placeholder="Ej: Cerámica, Bronce">
-                    </div>
-                    <div class="form-group mb-1">
-                        <label>Cronología</label>
-                        <input type="text" id="piece-chronology" class="glass-input" placeholder="Ej: Siglo III d.C.">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group mb-1">
-                        <label>Dimensiones</label>
-                        <input type="text" id="piece-dimensions" class="glass-input" placeholder="Ej: 15 x 10 cm">
-                    </div>
-                    <div class="form-group mb-1">
-                        <label>Procedencia</label>
-                        <input type="text" id="piece-provenance" class="glass-input" placeholder="Ej: Yacimiento X">
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group mb-1">
-                        <label>Autor</label>
-                        <input type="text" id="piece-author" class="glass-input" placeholder="Ej: Desconocido">
-                    </div>
-                    <div class="form-group mb-1">
-                        <label>Sección</label>
-                        <input type="text" id="piece-section" class="glass-input" placeholder="Ej: Arqueología">
-                    </div>
-                </div>
-
-                <div class="form-group mb-1">
-                    <label>URL de Imagen <span class="text-muted" style="font-size:0.7rem;">(Prioridad: 1. URL / 2. [Nº Inv Nuevo].jpg / 3. [Nº Inv Antiguo].jpg)</span></label>
-                    <input type="url" id="piece-image-url" class="glass-input" placeholder="https://ejemplo.com/foto.jpg">
-                </div>
-
-                <div class="form-group mb-1">
-                    <label>Descripción</label>
-                    <textarea id="piece-description" class="glass-input" rows="3" placeholder="Descripción detallada de la pieza..."></textarea>
-                </div>
-
-                <div class="form-group mb-1">
-                    <label>Observaciones</label>
-                    <textarea id="piece-observations" class="glass-input" rows="2" placeholder="Notas adicionales..."></textarea>
-                </div>
-                
-                <div class="modal-actions mt-2">
-                    <button type="button" onclick="closeAddPieceModal()" class="btn-text">Cancelar</button>
-                    <button type="submit" id="btn-submit-piece" class="btn-gold">Guardar Pieza</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add User Modal -->
-    <div id="add-user-modal" class="modal-overlay" style="display: none;">
-        <div class="modal glass">
-            <h2 id="modal-user-title">Nuevo Operario</h2>
-            <form id="form-add-user" class="mt-2">
-                <input type="hidden" id="edit-user-id" value="">
-                <div class="form-group mb-1">
-                    <label>Nombre del Operador</label>
-                    <input type="text" id="new-user-name" class="glass-input" placeholder="Ej: Ana Torres" required>
-                </div>
-                <div class="form-group mb-1">
-                    <label>PIN de Acceso (4 dígitos)</label>
-                    <input type="password" id="new-user-pin" class="glass-input" placeholder="Ej: 1234" pattern="[0-9]{4}" maxlength="4" inputmode="numeric" required>
-                </div>
-                
-                <div class="modal-actions mt-2">
-                    <button type="button" onclick="closeAddUserModal()" class="btn-text">Cancelar</button>
-                    <button type="submit" id="btn-submit-user" class="btn-gold">Guardar Operario</button>
+                    <button type="submit" id="btn-submit-container" class="btn-gold">Guardar</button>
                 </div>
             </form>
         </div>
