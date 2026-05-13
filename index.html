@@ -86,7 +86,7 @@
                 <button id="btn-logout" title="Salir"><i data-lucide="log-out"></i></button>
             </div>
             <div class="sidebar-footer">
-                <span class="version-tag">Musaraña 2026 | v0.0.2</span>
+                <span class="version-tag">Musaraña 2026 | v1.1.1</span>
             </div>
         </aside>
 
@@ -107,27 +107,55 @@
             <div id="view-container">
                 <!-- Dashboard View -->
                 <section id="view-dashboard" class="view">
+                    <!-- Stats Grid -->
                     <div class="stats-grid">
-                        <div class="stat-card glass clickable" onclick="showView('inventory')">
-                            <span class="stat-label">Total Piezas</span>
-                            <span class="stat-value" id="stats-total">0</span>
-                            <i data-lucide="gem"></i>
+                        <div class="stat-card glass">
+                            <div class="stat-icon"><i data-lucide="gem"></i></div>
+                            <div class="stat-content">
+                                <h3>Total Piezas</h3>
+                                <div class="stat-value" id="stats-total">0</div>
+                            </div>
                         </div>
-                        <div class="stat-card glass gold clickable" onclick="showView('dashboard')">
-                            <span class="stat-label">Movimientos Hoy</span>
-                            <span class="stat-value" id="stats-today">0</span>
-                            <i data-lucide="package-search"></i>
+                        <div class="stat-card glass">
+                            <div class="stat-icon"><i data-lucide="zap"></i></div>
+                            <div class="stat-content">
+                                <h3>Movimientos Hoy</h3>
+                                <div class="stat-value" id="stats-today">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card glass">
+                            <div class="stat-icon"><i data-lucide="warehouse"></i></div>
+                            <div class="stat-content">
+                                <h3>Salas Activas</h3>
+                                <div class="stat-value" id="stats-rooms">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card glass gold">
+                            <div class="stat-icon"><i data-lucide="shield-check"></i></div>
+                            <div class="stat-content">
+                                <h3>Integridad Datos</h3>
+                                <div class="stat-value" id="stats-quality">0%</div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="dashboard-panels">
-                        <div class="panel">
-                            <div class="panel-header-simple" style="justify-content: space-between;">
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <i data-lucide="history"></i>
-                                    <h3>Actividad Reciente</h3>
-                                </div>
-                                <button class="btn-icon" onclick="window.exportMovements()" title="Exportar historial completo"><i data-lucide="download"></i></button>
+
+                    <!-- Enhanced Dashboard Grid -->
+                    <div class="dashboard-panels mt-2">
+                        <div class="panel glass p-2">
+                            <div class="panel-header-simple">
+                                <i data-lucide="bar-chart-3"></i>
+                                <h3>Distribución por Materia</h3>
+                            </div>
+                            <div id="material-distribution-chart" class="custom-chart-container">
+                                <!-- Se llena dinámicamente -->
+                                <p class="empty-state">Calculando distribución...</p>
+                            </div>
+                        </div>
+
+                        <div class="panel glass p-2">
+                            <div class="panel-header-simple">
+                                <i data-lucide="history"></i>
+                                <h3>Actividad Reciente</h3>
                             </div>
                             <div id="recent-movements-list" class="log-list">
                                 <p class="empty-state">No hay registros recientes</p>
@@ -283,6 +311,7 @@
                             <div class="tags">
                                 <span class="tag" id="detail-material">Materia</span>
                                 <span class="tag gold" id="detail-chronology">Cronología</span>
+                                <span class="tag status-tag" id="detail-status">Estado</span>
                             </div>
                             
                             <div class="location-box glass">

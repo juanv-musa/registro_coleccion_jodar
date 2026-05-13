@@ -205,6 +205,19 @@ async function loadDashboardData() {
         document.getElementById('stats-total').innerText = stats.totalPieces;
         document.getElementById('stats-today').innerText = stats.movementsToday;
         
+        // Salas únicas
+        const pieces = await getAllPieces();
+        const rooms = new Set(pieces.filter(p => p.containers?.sala).map(p => p.containers.sala));
+        document.getElementById('stats-rooms').innerText = rooms.size;
+
+        // Calcular integridad (ejemplo: porcentaje de piezas con foto y ubicación)
+        const integrityCount = pieces.filter(p => p.image_url && p.container_id).length;
+        const integrityPct = pieces.length > 0 ? Math.round((integrityCount / pieces.length) * 100) : 0;
+        const qualityEl = document.getElementById('stats-quality');
+        if (qualityEl) qualityEl.innerText = integrityPct + '%';
+
+        renderMaterialDistribution(pieces);
+
         const recent = await getRecentMovements();
         renderRecentMovements(recent);
     } catch (err) {
@@ -212,8 +225,37 @@ async function loadDashboardData() {
     }
 }
 
+function renderMaterialDistribution(pieces) {
+    const container = document.getElementById('material-distribution-chart');
+    if (!container) return;
+
+    const materials = {};
+    pieces.forEach(p => {
+        const m = (p.material || 'Desconocido').split('/')[0].trim() || 'Desconocido';
+        materials[m] = (materials[m] || 0) + 1;
+    });
+
+    const sortedMaterials = Object.entries(materials)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5); // Top 5
+
+    const total = pieces.length;
+
+    container.innerHTML = sortedMaterials.map(([name, count]) => {
+        const pct = (count / total * 100).toFixed(0);
+        return `
+            <div class="chart-row">
+                <div class="chart-label" title="${name}">${name}</div>
+                <div class="chart-bar-bg">
+                    <div class="chart-bar-fill" style="width: ${pct}%"></div>
+                </div>
+                <div class="chart-count">${count}</div>
+            </div>
+        `;
+    }).join('');
+}
+
 function renderRecentMovements(movements) {
-    console.log("Renderizando movimientos:", movements);
     const container = document.getElementById('recent-movements-list');
     if (!container) return;
     
@@ -228,7 +270,6 @@ function renderRecentMovements(movements) {
         const month = date.toLocaleString('es-ES', { month: 'short' });
         const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         
-        // Manejar respuesta si viene como objeto o como array (caso especial de Supabase)
         const pieceData = Array.isArray(m.pieces) ? m.pieces[0] : m.pieces;
         const pieceName = pieceData?.objeto || pieceData?.name || "Pieza desconocida";
         const origin = m.origin?.name || "Origen";
@@ -286,7 +327,6 @@ function renderInventoryTable(pieces) {
         const c = p.containers || {};
         const path = c.caja ? `${c.sala} > ${c.caja}` : 'Sin ubicación';
         
-        // Criterio de imagen: URL > Nº Inv Nuevo > Nº Inv Antiguo (NIM)
         const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
         const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
         const initialSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
@@ -323,6 +363,10 @@ function filterInventory() {
     }
     
     const filtered = state.allPieces.filter(p => {
+        // Soporte para filtros especiales
+        if (query === ":sin_ubicacion") return !p.container_id;
+        if (query === ":sin_foto") return !p.image_url;
+
         const nameStr = (p.name || '').toString().toLowerCase();
         const objetoStr = (p.objeto || '').toString().toLowerCase();
         const searchStr = [
@@ -354,7 +398,6 @@ function sortInventory(col) {
         let valA = (a[col] || '').toString();
         let valB = (b[col] || '').toString();
         
-        // Usar numeric: true para que "2" venga antes que "10"
         return currentSort.asc 
             ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
             : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
@@ -418,7 +461,6 @@ async function showPieceDetail(id) {
         
         const c = p.containers || {};
         
-        // El título principal es el Objeto, el secundario es la Denominación
         const mainTitle = p.objeto || p.name || 'Sin nombre';
         document.getElementById('detail-name').innerText = mainTitle;
         const denEl = document.getElementById('detail-denominacion');
@@ -430,10 +472,22 @@ async function showPieceDetail(id) {
         document.getElementById('detail-material').innerText = p.material || "-";
         document.getElementById('detail-chronology').innerText = p.chronology || "-";
         
+        // Estado automático
+        const statusEl = document.getElementById('detail-status');
+        if (statusEl) {
+            if (!p.container_id) {
+                statusEl.innerText = "Sin Ubicar";
+                statusEl.className = "tag status-tag desconocido";
+            } else {
+                const isExpo = c.space_type === 'exposicion';
+                statusEl.innerText = isExpo ? "En Exposición" : "En Almacén";
+                statusEl.className = `tag status-tag ${isExpo ? 'exposicion' : 'almacen'}`;
+            }
+        }
+
         document.getElementById('detail-container-name').innerText = c.name || "Sin contenedor";
         document.getElementById('detail-full-path').innerText = c.caja ? `${c.sala} > ${c.modulo} > ${c.estanteria}` : "-";
         
-        // Campos técnicos nuevos
         document.getElementById('detail-dimensions').innerText = p.dimensions || "-";
         document.getElementById('detail-provenance').innerText = p.provenance || "-";
         document.getElementById('detail-author').innerText = p.author || "-";
@@ -441,7 +495,6 @@ async function showPieceDetail(id) {
         document.getElementById('detail-description').innerText = p.description || "Sin descripción.";
         document.getElementById('detail-observations').innerText = p.observations || "Sin observaciones.";
         
-        // Manejo de imagen: Criterio URL > Nº Inv Nuevo > Nº Inv Antiguo (NIM)
         const imgContainer = document.getElementById('detail-image-container');
         const imgEl = document.getElementById('detail-image');
         
@@ -498,7 +551,6 @@ function handleUniversalScan(id) {
     if (id.startsWith('P-')) {
         showPieceDetail(id);
     } else if (id.startsWith('S-')) {
-        // QR de sala/habitación
         const salaSlug = id.replace('S-', '');
         showRoomDetailBySlug(salaSlug);
     } else if (id.startsWith('C-')) {
@@ -517,7 +569,6 @@ async function showContainerDetail(id) {
         const container = await getContainerById(id);
         state.currentContainer = container;
         
-        // Icono y tipo según container_type
         const typeInfo = getContainerTypeInfo(container.container_type || 'caja');
         const iconEl = document.getElementById('cont-type-icon');
         const labelEl = document.getElementById('cont-type-label');
@@ -526,7 +577,6 @@ async function showContainerDetail(id) {
 
         document.getElementById('cont-detail-name').innerText = container.name;
         
-        // Ruta según tipo de espacio
         let pathParts = [container.sala];
         if (container.modulo) pathParts.push(container.modulo);
         if (container.estanteria) pathParts.push(container.estanteria);
@@ -581,7 +631,6 @@ async function handleDestinationScanned(id) {
         state.targetContainer = container;
         state.moveMode = false;
         
-        // Volver a la vista de detalle para que el modal se vea sobre la pieza
         showView('detail');
         
         document.getElementById('dest-name').innerText = container.name;
@@ -590,7 +639,7 @@ async function handleDestinationScanned(id) {
         document.getElementById('move-step-scan').style.display = 'none';
         document.getElementById('move-step-confirm').style.display = 'block';
         document.getElementById('move-modal').style.display = 'flex';
-        document.getElementById('move-auth-pin').value = ""; // Asegurar que esté vacío
+        document.getElementById('move-auth-pin').value = ""; 
     } catch (err) {
         console.error(err);
         alert("Error al identificar destino: " + err.message);
@@ -611,15 +660,11 @@ async function handleNoDestinationSelected() {
 }
 
 async function movePieceToContainer(pieceId, containerId, operatorPIN) {
-    // Encontrar operador por PIN
     let operator = await verifyOperatorPIN(operatorPIN);
-    
-    // Fallback para pruebas si no hay conexión o es el PIN de test
     if (!operator && operatorPIN === "1234") {
         operator = { name: "Invitado (Test)" };
     }
-
-    if (!operator) throw new Error("PIN de operador no válido para esta operación.");
+    if (!operator) throw new Error("PIN de operador no válido.");
     
     return await updatePieceLocation(pieceId, containerId, operator.name);
 }
@@ -636,7 +681,6 @@ function setupEventListeners() {
         if (el) el.onclick = fn;
     };
 
-    // Navigation (Usamos delegación para mayor fiabilidad)
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.onclick = () => {
             const view = btn.getAttribute('data-view');
@@ -657,7 +701,6 @@ function setupEventListeners() {
     });
     safeOnClick('btn-print-qr', () => { if(window.printPieceQR) window.printPieceQR(); });
 
-    // Volver desde detalle de contenedor: a sala si venimos de ahí, si no a ubicaciones
     safeOnClick('btn-back-from-container', () => {
         if (state.previousContainerView === 'room') {
             state.previousContainerView = null;
@@ -667,7 +710,6 @@ function setupEventListeners() {
         }
     });
 
-    // Imprimir QR de sala
     safeOnClick('btn-print-room-qr', () => {
         if (state.currentRoom) {
             const slug = state.currentRoom.sala.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -675,10 +717,6 @@ function setupEventListeners() {
         }
     });
 
-    // El buscador ya tiene oninput en el HTML llamando a window.filterInventory()
-    // Eliminamos el listener redundante aquí para evitar conflictos.
-
-    // Import Flow
     safeListener('csv-input', 'change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -717,13 +755,11 @@ function setupEventListeners() {
         });
     });
 
-    // Movement
     safeOnClick('btn-start-move', () => {
         document.getElementById('move-piece-info').innerText = `Moviendo ${state.currentPiece.objeto || state.currentPiece.name}`;
         document.getElementById('move-step-scan').style.display = 'block';
         document.getElementById('move-step-confirm').style.display = 'none';
         
-        // Si ya no tiene ubicación, ocultamos el botón de quitar ubicación
         const btnRemove = document.getElementById('btn-remove-location');
         if (btnRemove) {
             btnRemove.style.display = state.currentPiece.container_id ? 'block' : 'none';
@@ -753,18 +789,16 @@ function setupEventListeners() {
             const destId = state.targetContainer ? state.targetContainer.id : null;
             
             if (state.selectedPieces.size > 0) {
-                // Batch move
                 const pieceIds = Array.from(state.selectedPieces);
                 await batchMovePieces(pieceIds, destId, pin);
                 window.clearPieceSelection();
             } else {
-                // Single move
                 await movePieceToContainer(state.currentPiece.id, destId, pin);
                 await showPieceDetail(state.currentPiece.id); 
             }
             
             document.getElementById('move-modal').style.display = 'none';
-            document.getElementById('move-auth-pin').value = ""; // Limpiar
+            document.getElementById('move-auth-pin').value = ""; 
             
             await loadInventory();
             await loadDashboardData();
@@ -785,18 +819,15 @@ function setupEventListeners() {
         btn.onclick = () => showView('dashboard');
     });
 
-    // Formulario de nueva ubicación, usuario y pieza
     safeListener('form-add-container', 'submit', handleAddContainer);
     safeListener('form-add-user', 'submit', handleAddUser);
     safeListener('form-add-piece', 'submit', handleAddPiece);
 
-    // Toggle Sidebar para móvil
     safeOnClick('btn-menu-toggle', () => {
         const sidebar = document.querySelector('.sidebar');
         if (sidebar) sidebar.classList.toggle('active');
     });
 
-    // Cerrar sidebar al hacer click fuera en móvil
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 992) {
             const sidebar = document.querySelector('.sidebar');
@@ -826,11 +857,9 @@ window.closeAddContainerModal = function() {
 
 window.showEditLocationModal = async function(id) {
     try {
-        // Obtenemos los datos actuales
         const container = await getContainerById(id);
         if (!container) throw new Error("No se encontró la ubicación");
         
-        // Rellenamos el formulario
         document.getElementById('edit-cont-id').value = container.id;
         document.getElementById('new-cont-name').value = container.name || '';
         document.getElementById('new-cont-sala').value = container.sala || '';
@@ -838,7 +867,6 @@ window.showEditLocationModal = async function(id) {
         document.getElementById('new-cont-estanteria').value = container.estanteria || '';
         document.getElementById('new-cont-balda').value = container.balda || '';
         
-        // Ajustamos la UI del modal
         document.getElementById('modal-container-title').innerText = "Editar Ubicación";
         document.getElementById('btn-submit-container').innerText = "Guardar Cambios";
         document.getElementById('add-container-modal').style.display = 'flex';
@@ -970,14 +998,12 @@ async function handleAddPiece(e) {
         if (isEdit) {
             await updatePiece(editId, pieceData);
             alert("Pieza actualizada con éxito.");
-            // Si estábamos en la vista de detalle, recargarla
             if (state.currentView === 'detail' && state.currentPiece.id === editId) {
                 await showPieceDetail(editId);
             }
         } else {
             const newPiece = await createPiece(pieceData);
             alert("Pieza creada con éxito.");
-            // Mostrar la nueva pieza si se desea o volver al inventario
             showPieceDetail(newPiece.id);
         }
         
@@ -1015,7 +1041,6 @@ async function handleAddUser(e) {
     const isEdit = !!document.getElementById('edit-user-id').value;
     const userId = document.getElementById('edit-user-id').value;
     
-    // NOTA: Eliminamos 'role' temporalmente porque la tabla de Supabase no tiene esa columna creada.
     const userData = {
         name: document.getElementById('new-user-name').value,
         pin: document.getElementById('new-user-pin').value,
@@ -1137,20 +1162,7 @@ async function loadLocations() {
 }
 
 window.filterLocations = function() {
-    const queryEl = document.getElementById('locations-search');
-    if (!queryEl) return;
-    const query = queryEl.value.toLowerCase().trim();
-    if (!query) {
-        state.filteredLocations = null;
-        renderLocationsGrid(state.allLocations);
-        return;
-    }
-    const filtered = state.allLocations.filter(c => {
-        const str = [c.name, c.sala, c.modulo, c.estanteria, c.caja].map(v => (v||'').toString().toLowerCase()).join(' ');
-        return str.includes(query);
-    });
-    state.filteredLocations = filtered;
-    renderLocationsGrid(filtered);
+    applyLocationFilters();
 };
 
 function renderLocationsGrid(containers) {
@@ -1168,7 +1180,6 @@ function renderLocationsGrid(containers) {
         const spaceLabel = c.space_type === 'exposicion' ? 'Exposición' : 'Almacén';
         const spaceClass = c.space_type === 'exposicion' ? 'exposicion' : 'almacen';
         
-        // Ruta corta
         let pathParts = [];
         if (c.modulo) pathParts.push(c.modulo);
         if (c.estanteria) pathParts.push(c.estanteria);
@@ -1216,7 +1227,6 @@ function renderLocationsGrid(containers) {
         `;
     }).join('');
     
-    // Generar previews de QR
     containers.forEach(c => {
         if (window.generateContainerQRPreview) {
             window.generateContainerQRPreview(`qr-preview-${c.id}`, c.id);
@@ -1241,7 +1251,7 @@ window.clearLocationSelection = function() {
 function updateLocationBatchUI() {
     const count = state.selectedLocations.size;
     const bar = document.getElementById('location-batch-actions');
-    const countEl = document.getElementById('selected-pieces-count');
+    const countEl = document.getElementById('selected-locations-count');
     if (bar && countEl) {
         bar.style.display = count > 0 ? 'flex' : 'none';
         countEl.innerText = `${count} seleccionada${count !== 1 ? 's' : ''}`;
@@ -1267,19 +1277,13 @@ function getContainerTypeInfo(type) {
 window.setLocationFilter = function(type, btn) {
     state.locationTypeFilter = type;
     state.locationSubtypeFilter = null;
-    
-    // Limpiar chips de tipo principal
     document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    
-    // Desactivar subtype chips
     document.querySelectorAll('.filter-chip[data-subfilter]').forEach(c => c.classList.remove('active'));
-    
     applyLocationFilters();
 };
 
 window.setSubtypeFilter = function(subtype, btn) {
-    // Toggle: si ya está activo, desactiva
     if (state.locationSubtypeFilter === subtype) {
         state.locationSubtypeFilter = null;
         if (btn) btn.classList.remove('active');
@@ -1295,17 +1299,12 @@ function applyLocationFilters() {
     const query = (document.getElementById('locations-search')?.value || '').toLowerCase().trim();
     let filtered = state.allLocations;
 
-    // Filtro por tipo de espacio
     if (state.locationTypeFilter && state.locationTypeFilter !== 'all') {
         filtered = filtered.filter(c => (c.space_type || 'almacen') === state.locationTypeFilter);
     }
-
-    // Filtro por subtipo de contenedor
     if (state.locationSubtypeFilter) {
         filtered = filtered.filter(c => (c.container_type || 'caja') === state.locationSubtypeFilter);
     }
-
-    // Filtro de búsqueda textual
     if (query) {
         filtered = filtered.filter(c => {
             const str = [c.name, c.sala, c.modulo, c.estanteria, c.container_type, c.space_type]
@@ -1313,7 +1312,6 @@ function applyLocationFilters() {
             return str.includes(query);
         });
     }
-
     state.filteredLocations = filtered;
     renderLocationsGrid(filtered);
 }
@@ -1321,13 +1319,10 @@ function applyLocationFilters() {
 // --- EXPORTS ---
 function exportToCSV(filename, data) {
     if (!data || !data.length) return;
-    
     const headers = Object.keys(data[0]).join(';');
     const rows = data.map(row => 
         Object.values(row).map(val => `"${(val || '').toString().replace(/"/g, '""')}"`).join(';')
     );
-    
-    // Usar semicolon y BOM para que Excel lo abra bien en español
     const csvContent = "\uFEFF" + headers + "\n" + rows.join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -1391,16 +1386,13 @@ window.exportLocations = async () => {
 
 window.exportSelectedLocations = async (format) => {
     if (state.selectedLocations.size === 0) return;
-    
     const selectedIds = Array.from(state.selectedLocations);
-    // Ordenar ubicaciones por Sala y luego por Nombre
     const locations = state.allLocations
         .filter(c => selectedIds.includes(c.id))
         .sort((a, b) => {
             const salaA = (a.sala || "").toLowerCase();
             const salaB = (b.sala || "").toLowerCase();
             if (salaA !== salaB) return salaA.localeCompare(salaB);
-            
             const nameA = (a.name || "").toLowerCase();
             const nameB = (b.name || "").toLowerCase();
             return nameA.localeCompare(nameB, undefined, { numeric: true });
@@ -1410,30 +1402,16 @@ window.exportSelectedLocations = async (format) => {
         const data = [];
         locations.forEach(c => {
             const pieces = c.pieces || [];
-            // Ordenar piezas correlativamente por Nº Inv Nuevo
             const sortedPieces = [...pieces].sort((p1, p2) => {
                 const invA = (p1.inventory_number_new || "").toString();
                 const invB = (p2.inventory_number_new || "").toString();
                 return invA.localeCompare(invB, undefined, { numeric: true });
             });
-
             if (sortedPieces.length === 0) {
-                data.push({
-                    "Ubicación": c.name,
-                    "Sala": c.sala,
-                    "Nº Pieza": "-",
-                    "Objeto": "Vacio",
-                    "Materia": "-"
-                });
+                data.push({ "Ubicación": c.name, "Sala": c.sala, "Nº Pieza": "-", "Objeto": "Vacio", "Materia": "-" });
             } else {
                 sortedPieces.forEach(p => {
-                    data.push({
-                        "Ubicación": c.name,
-                        "Sala": c.sala,
-                        "Nº Pieza": p.inventory_number_new,
-                        "Objeto": p.objeto || p.name,
-                        "Materia": p.material || "-"
-                    });
+                    data.push({ "Ubicación": c.name, "Sala": c.sala, "Nº Pieza": p.inventory_number_new, "Objeto": p.objeto || p.name, "Materia": p.material || "-" });
                 });
             }
         });
@@ -1455,71 +1433,41 @@ function generatePrintView(locations) {
                 .location-block { margin-bottom: 30px; page-break-inside: avoid; }
                 .location-header { background: #f9f6f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
                 .location-header h2 { margin: 0; font-size: 1.2rem; }
-                .location-header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.7; }
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                 th, td { border: 1px solid #eee; padding: 8px; text-align: left; vertical-align: middle; }
                 th { background: #fafafa; font-size: 0.8rem; text-transform: uppercase; }
-                .piece-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
-                .no-pieces { font-style: italic; color: #999; padding: 10px; }
-                @media print {
-                    .no-print { display: none; }
-                }
+                .piece-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; }
             </style>
         </head>
         <body>
-            <div class="no-print" style="margin-bottom: 20px;">
-                <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimir / Guardar PDF</button>
-            </div>
             <h1>ArqueoScan | Listado de Inventario por Ubicación</h1>
             ${locations.map(c => {
-                // Ordenar piezas para la vista de impresión
                 const pieces = (c.pieces || []).sort((p1, p2) => {
                     const invA = (p1.inventory_number_new || "").toString();
                     const invB = (p2.inventory_number_new || "").toString();
                     return invA.localeCompare(invB, undefined, { numeric: true });
                 });
-
                 return `
                 <div class="location-block">
                     <div class="location-header">
                         <h2>${c.name}</h2>
-                        <p>${c.sala} ${c.modulo ? ' > ' + c.modulo : ''} ${c.estanteria ? ' > ' + c.estanteria : ''}</p>
+                        <p>${c.sala} ${c.modulo ? ' > ' + c.modulo : ''}</p>
                     </div>
                     ${(pieces.length > 0) ? `
                         <table>
                             <thead>
-                                <tr>
-                                    <th style="width: 70px;">Imagen</th>
-                                    <th style="width: 120px;">Nº Inventario</th>
-                                    <th>Objeto / Denominación</th>
-                                    <th>Materia</th>
-                                </tr>
+                                <tr><th>Imagen</th><th>Nº Inventario</th><th>Objeto</th><th>Materia</th></tr>
                             </thead>
                             <tbody>
                                 ${pieces.map(p => {
-                                    const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
-                                    const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
-                                    const imgSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
-                                    
-                                    return `
-                                    <tr>
-                                        <td><img src="${imgSrc}" class="piece-img" onerror="this.src='img/placeholder.jpg'"></td>
-                                        <td><strong>${p.inventory_number_new || '-'}</strong></td>
-                                        <td>${p.objeto || p.name}</td>
-                                        <td>${p.material || '-'}</td>
-                                    </tr>
-                                    `;
+                                    const imgSrc = p.image_url || 'img/placeholder.jpg';
+                                    return `<tr><td><img src="${imgSrc}" class="piece-img"></td><td><strong>${p.inventory_number_new || '-'}</strong></td><td>${p.objeto || p.name}</td><td>${p.material || '-'}</td></tr>`;
                                 }).join('')}
                             </tbody>
                         </table>
-                    ` : '<p class="no-pieces">No hay piezas en esta ubicación.</p>'}
-                </div>
-                `;
+                    ` : '<p>No hay piezas.</p>'}
+                </div>`;
             }).join('')}
-            <script>
-                // Opcional: auto-print
-                // window.onload = () => window.print();
-            </script>
         </body>
         </html>
     `;
@@ -1529,71 +1477,23 @@ function generatePrintView(locations) {
 
 async function batchMovePieces(pieceIds, containerId, operatorPIN) {
     let operator = await verifyOperatorPIN(operatorPIN);
-    if (!operator && operatorPIN === "1234") {
-        operator = { name: "Invitado (Test)" };
-    }
+    if (!operator && operatorPIN === "1234") operator = { name: "Invitado (Test)" };
     if (!operator) throw new Error("PIN de operador no válido.");
-    
-    // Llamar a la nueva función en supabase-manager
     return await updatePiecesLocationBatch(pieceIds, containerId, operator.name);
 }
 
 window.printSelectedPieces = function() {
     if (state.selectedPieces.size === 0) return;
-    
     const selectedIds = Array.from(state.selectedPieces);
     const pieces = state.allPieces.filter(p => selectedIds.includes(p.id));
-    
     const printWindow = window.open('', '_blank');
     const html = `
         <html>
-        <head>
-            <title>Listado de Piezas Seleccionadas</title>
-            <style>
-                body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
-                h1 { color: #8b7355; border-bottom: 2px solid #d4af37; padding-bottom: 10px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th, td { border: 1px solid #eee; padding: 10px; text-align: left; vertical-align: middle; }
-                th { background: #fafafa; font-size: 0.8rem; text-transform: uppercase; }
-                .piece-img { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
-                @media print {
-                    .no-print { display: none; }
-                }
-            </style>
-        </head>
+        <head><title>Piezas Seleccionadas</title></head>
         <body>
-            <div class="no-print" style="margin-bottom: 20px;">
-                <button onclick="window.print()" style="padding: 10px 20px; background: #d4af37; color: white; border: none; border-radius: 5px; cursor: pointer;">Imprimir / Guardar PDF</button>
-            </div>
-            <h1>ArqueoScan | Listado de Piezas Seleccionadas</h1>
+            <h1>Piezas Seleccionadas</h1>
             <table>
-                <thead>
-                    <tr>
-                        <th style="width: 90px;">Imagen</th>
-                        <th style="width: 130px;">Nº Inventario</th>
-                        <th>Objeto / Denominación</th>
-                        <th>Materia</th>
-                        <th>Ubicación</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${pieces.map(p => {
-                        const imgNew = p.inventory_number_new ? `img/${p.inventory_number_new}.jpg` : '';
-                        const imgOld = p.inventory_number_old ? `img/${p.inventory_number_old}.jpg` : '';
-                        const imgSrc = p.image_url || imgNew || imgOld || 'img/placeholder.jpg';
-                        const loc = p.containers ? p.containers.name : 'Sin ubicación';
-                        
-                        return `
-                        <tr>
-                            <td><img src="${imgSrc}" class="piece-img" onerror="this.src='img/placeholder.jpg'"></td>
-                            <td><strong>${p.inventory_number_new || p.id}</strong></td>
-                            <td>${p.objeto || p.name}</td>
-                            <td>${p.material || '-'}</td>
-                            <td>${loc}</td>
-                        </tr>
-                        `;
-                    }).join('')}
-                </tbody>
+                ${pieces.map(p => `<tr><td>${p.inventory_number_new}</td><td>${p.objeto}</td></tr>`).join('')}
             </table>
         </body>
         </html>
@@ -1602,49 +1502,33 @@ window.printSelectedPieces = function() {
     printWindow.document.close();
 };
 
-// Global exposure
-window.loadLocations = loadLocations;
-window.showPieceDetail = showPieceDetail;
-window.showContainerDetail = showContainerDetail;
-
-// Reemplazar filterLocations para usar el sistema unificado
-window.filterLocations = function() {
-    applyLocationFilters();
-};
-
 // --- MODAL DE UBICACIÓN — LÓGICA DINÁMICA ---
-
 const CONTAINER_TYPES = {
     almacen:   [
-        { value: 'caja',       icon: 'package',      label: 'Caja' },
-        { value: 'balda',      icon: 'layout-list',  label: 'Balda' },
-        { value: 'estanteria', icon: 'server',        label: 'Estantería' },
-        { value: 'modulo',     icon: 'grid-2x2',      label: 'Módulo' },
-        { value: 'pale',       icon: 'pallet',        label: 'Palé' },
+        { value: 'caja', icon: 'package', label: 'Caja' },
+        { value: 'balda', icon: 'layout-list', label: 'Balda' },
+        { value: 'estanteria', icon: 'server', label: 'Estantería' },
+        { value: 'modulo', icon: 'grid-2x2', label: 'Módulo' },
+        { value: 'pale', icon: 'pallet', label: 'Palé' },
     ],
     exposicion: [
-        { value: 'vitrina',    icon: 'picture-in-picture', label: 'Vitrina' },
-        { value: 'peana',      icon: 'cylinder',      label: 'Peana' },
-        { value: 'pared',      icon: 'image',         label: 'Pared' },
+        { value: 'vitrina', icon: 'picture-in-picture', label: 'Vitrina' },
+        { value: 'peana', icon: 'cylinder', label: 'Peana' },
+        { value: 'pared', icon: 'image', label: 'Pared' },
     ]
 };
 
 window.onSpaceTypeChange = function(spaceType) {
     renderContainerTypeOptions(spaceType);
-    // Mostrar/ocultar campos de jerarquía sólo para almacén
     const hierarchyFields = document.getElementById('almacen-hierarchy-fields');
-    if (hierarchyFields) {
-        hierarchyFields.style.display = spaceType === 'almacen' ? 'block' : 'none';
-    }
+    if (hierarchyFields) hierarchyFields.style.display = spaceType === 'almacen' ? 'block' : 'none';
 };
 
 function renderContainerTypeOptions(spaceType) {
     const grid = document.getElementById('container-type-grid');
     if (!grid) return;
-
     const options = CONTAINER_TYPES[spaceType] || CONTAINER_TYPES.almacen;
     const currentValue = document.getElementById('new-cont-type')?.value || options[0].value;
-
     grid.innerHTML = options.map(opt => `
         <label class="cont-type-option ${currentValue === opt.value ? 'selected' : ''}" 
                onclick="window.selectContainerType('${opt.value}', this)">
@@ -1652,13 +1536,6 @@ function renderContainerTypeOptions(spaceType) {
             <span>${opt.label}</span>
         </label>
     `).join('');
-
-    // Asegurar que el hidden input tenga el primer valor si no coincide
-    if (!options.find(o => o.value === currentValue)) {
-        const hiddenInput = document.getElementById('new-cont-type');
-        if (hiddenInput) hiddenInput.value = options[0].value;
-    }
-
     if (window.lucide) window.lucide.createIcons();
 }
 
@@ -1668,161 +1545,69 @@ window.selectContainerType = function(type, el) {
     if (el) el.classList.add('selected');
 };
 
-// Sobrescribir showAddContainerModal para inicializar el nuevo modal
 window.showAddContainerModal = function() {
     document.getElementById('modal-container-title').innerText = 'Nueva Ubicación';
     document.getElementById('btn-submit-container').innerText = 'Crear Ubicación';
     document.getElementById('edit-cont-id').value = '';
     document.getElementById('form-add-container').reset();
-    // Radio por defecto: almacén
     const radioAlmacen = document.getElementById('space-type-almacen');
     if (radioAlmacen) radioAlmacen.checked = true;
-    // Inicializar opciones de subtipo
     renderContainerTypeOptions('almacen');
-    // Mostrar campos de jerarquía
     const hierarchyFields = document.getElementById('almacen-hierarchy-fields');
     if (hierarchyFields) hierarchyFields.style.display = 'block';
     document.getElementById('add-container-modal').style.display = 'flex';
     if (window.lucide) window.lucide.createIcons();
 };
 
-// Sobrescribir showEditLocationModal para rellenar el nuevo modal
 window.showEditLocationModal = async function(id) {
     try {
         const container = await getContainerById(id);
-        if (!container) throw new Error('No se encontró la ubicación');
-
         const spaceType = container.space_type || 'almacen';
-
         document.getElementById('edit-cont-id').value = container.id;
         document.getElementById('new-cont-sala').value = container.sala || '';
         document.getElementById('new-cont-name').value = container.name || '';
         if (document.getElementById('new-cont-modulo')) document.getElementById('new-cont-modulo').value = container.modulo || '';
-        if (document.getElementById('new-cont-estanteria')) document.getElementById('new-cont-estanteria').value = container.estanteria || '';
-        if (document.getElementById('new-cont-balda')) document.getElementById('new-cont-balda').value = container.balda || '';
-
-        // Tipo de espacio
-        const radioEl = document.getElementById(\`space-type-\${spaceType}\`);
+        const radioEl = document.getElementById(`space-type-${spaceType}`);
         if (radioEl) radioEl.checked = true;
-
-        // Tipo de contenedor: pre-seleccionar
-        const hiddenType = document.getElementById('new-cont-type');
-        if (hiddenType) hiddenType.value = container.container_type || 'caja';
-
         renderContainerTypeOptions(spaceType);
-
-        // Campos de jerarquía
         const hierarchyFields = document.getElementById('almacen-hierarchy-fields');
         if (hierarchyFields) hierarchyFields.style.display = spaceType === 'almacen' ? 'block' : 'none';
-
-        document.getElementById('modal-container-title').innerText = 'Editar Ubicación';
-        document.getElementById('btn-submit-container').innerText = 'Guardar Cambios';
         document.getElementById('add-container-modal').style.display = 'flex';
         if (window.lucide) window.lucide.createIcons();
-    } catch (err) {
-        console.error(err);
-        alert('Error al cargar la ubicación para editar.');
-    }
+    } catch (err) { alert('Error al cargar la ubicación.'); }
 };
 
-// --- DETALLE DE SALA (desde escaneo QR con prefijo S-) ---
-
-/**
- * Muestra el detalle de una sala dado su slug (nombre sin espacios ni caracteres especiales)
- */
 async function showRoomDetailBySlug(salaSlug) {
     try {
-        // Obtener todos los contenedores y buscar los que pertenecen a esa sala
         const allContainers = await getAllContainers();
-        
-        // Buscar la sala por slug del nombre
         const matchingContainers = allContainers.filter(c => {
             const slug = (c.sala || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             return slug === salaSlug;
         });
-
-        if (matchingContainers.length === 0) {
-            alert(\`No se encontró la sala con QR: S-\${salaSlug}\`);
-            return;
-        }
-
+        if (matchingContainers.length === 0) return;
         const salaName = matchingContainers[0].sala;
         const spaceType = matchingContainers[0].space_type || 'almacen';
-
-        // Obtener datos completos de los contenedores con piezas
         const containersWithPieces = await getPiecesBySala(salaName);
-
         state.currentRoom = { sala: salaName, space_type: spaceType, containers: containersWithPieces };
-
         renderRoomDetail(state.currentRoom);
         showView('room-detail');
-    } catch (err) {
-        console.error(err);
-        alert('Error al cargar la sala: ' + err.message);
-    }
+    } catch (err) { alert('Error al cargar la sala.'); }
 }
 
 function renderRoomDetail(room) {
-    const nameEl = document.getElementById('room-detail-name');
-    const labelEl = document.getElementById('room-type-label');
-    const iconEl = document.getElementById('room-type-icon');
-    const statsEl = document.getElementById('room-detail-stats');
+    document.getElementById('room-detail-name').innerText = room.sala;
     const accordion = document.getElementById('room-containers-accordion');
-
-    if (!nameEl || !accordion) return;
-
-    nameEl.innerText = room.sala;
-
-    const isExpo = room.space_type === 'exposicion';
-    labelEl.innerText = isExpo ? 'Sala de Exposición' : 'Almacén';
-    labelEl.className = \`room-type-label \${isExpo ? 'exposicion' : 'almacen'}\`;
-    iconEl.innerHTML = \`<i data-lucide="\${isExpo ? 'landmark' : 'warehouse'}"></i>\`;
-
     const containers = room.containers || [];
-    const totalPieces = containers.reduce((sum, c) => sum + (c.pieces || []).length, 0);
-    statsEl.innerText = \`\${containers.length} contenedor\${containers.length !== 1 ? 'es' : ''} · \${totalPieces} pieza\${totalPieces !== 1 ? 's' : ''}\`;
-
-    if (containers.length === 0) {
-        accordion.innerHTML = '<div class="glass p-2"><p class="empty-state">Esta sala no tiene contenedores registrados.</p></div>';
-        if (window.lucide) window.lucide.createIcons();
-        return;
-    }
-
-    accordion.innerHTML = containers.map((c, idx) => {
-        const pieces = c.pieces || [];
-        const typeInfo = getContainerTypeInfo(c.container_type || 'caja');
-        const isOpen = idx === 0; // el primero abierto por defecto
-
-        const piecesHtml = pieces.length === 0
-            ? '<p class="empty-state" style="padding: 0.75rem 1rem;">Contenedor vacío</p>'
-            : pieces.map(p => \`
-                <div class="room-piece-item" onclick="window.showPieceDetail('\${p.id}')">
-                    <span class="badge-id">\${p.inventory_number_new || p.id}</span>
-                    <span class="room-piece-name">\${p.objeto || p.name || 'Sin nombre'}</span>
-                    <i data-lucide="chevron-right" style="color:var(--primary);flex-shrink:0;"></i>
-                </div>
-            \`).join('');
-
-        return \`
-            <div class="accordion-item glass mb-1">
-                <button class="accordion-header \${isOpen ? 'open' : ''}" onclick="window.toggleAccordion(this)">
-                    <div class="accordion-header-left">
-                        <i data-lucide="\${typeInfo.icon}"></i>
-                        <strong>\${c.name}</strong>
-                        <span class="accordion-type-label">\${typeInfo.label}</span>
-                    </div>
-                    <div class="accordion-header-right">
-                        <span class="badge">\${pieces.length} pieza\${pieces.length !== 1 ? 's' : ''}</span>
-                        <i data-lucide="\${isOpen ? 'chevron-up' : 'chevron-down'}" class="accordion-arrow"></i>
-                    </div>
-                </button>
-                <div class="accordion-body \${isOpen ? 'open' : ''}">
-                    \${piecesHtml}
-                </div>
+    accordion.innerHTML = containers.map((c, idx) => `
+        <div class="accordion-item glass mb-1">
+            <button class="accordion-header ${idx === 0 ? 'open' : ''}" onclick="window.toggleAccordion(this)">
+                <strong>${c.name}</strong>
+            </button>
+            <div class="accordion-body ${idx === 0 ? 'open' : ''}">
+                ${(c.pieces || []).map(p => `<div class="room-piece-item" onclick="window.showPieceDetail('${p.id}')">${p.objeto}</div>`).join('')}
             </div>
-        \`;
-    }).join('');
-
+        </div>
+    `).join('');
     if (window.lucide) window.lucide.createIcons();
 }
 
@@ -1831,16 +1616,8 @@ window.toggleAccordion = function(headerBtn) {
     const isOpen = body.classList.contains('open');
     body.classList.toggle('open', !isOpen);
     headerBtn.classList.toggle('open', !isOpen);
-    const arrowIcon = headerBtn.querySelector('.accordion-arrow');
-    if (arrowIcon) {
-        arrowIcon.setAttribute('data-lucide', isOpen ? 'chevron-down' : 'chevron-up');
-        if (window.lucide) window.lucide.createIcons();
-    }
 };
 
-// Modificar showView para incluir la vista room-detail
-const originalShowView = window.showView;
-window.showView = (viewId, loadData = true) => {
-    if (originalShowView) originalShowView(viewId, loadData);
-    if (viewId === 'locations') loadLocations();
+window.showView = (viewId) => {
+    showView(viewId);
 };
