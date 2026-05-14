@@ -129,7 +129,7 @@ window.getAllPieces = async function() {
 
 window.getAllContainers = async function() {
     if (!dbClient) return [];
-    const { data } = await dbClient.from('containers').select('*, pieces(id, objeto, name, inventory_number_new, image_url)').order('sala').order('name');
+    const { data } = await dbClient.from('containers').select('*, pieces(id, objeto, name, inventory_number_new, image_url, material)').order('sala').order('name');
     return data || [];
 };
 
@@ -320,7 +320,7 @@ window.getPiecesBySala = async function(sala) {
     try {
         const { data, error } = await dbClient
             .from('containers')
-            .select('*, pieces(id, objeto, name, inventory_number_new, image_url, materia)')
+            .select('*, pieces(id, objeto, name, inventory_number_new, image_url, material)')
             .eq('sala', sala)
             .order('name');
         if (error) throw error;
