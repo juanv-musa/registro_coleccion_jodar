@@ -1344,7 +1344,7 @@ window.exportInventory = () => {
         "Num_Inv_Nuevo": p.inventory_number_new,
         "Num_Inv_Antiguo": p.inventory_number_old,
         "Objeto": p.objeto || p.name,
-        "Material": p.material,
+        "Materia": p.material,
         "Cronologia": p.chronology,
         "Ubicacion": p.containers ? p.containers.name : "Sin ubicación",
         "Sala": p.containers ? p.containers.sala : "-"
@@ -1403,7 +1403,7 @@ window.exportSelectedLocations = async (format) => {
                     "Sala": c.sala,
                     "Nº Pieza": "-",
                     "Objeto": "Vacio",
-                    "Material": "-"
+                    "Materia": "-"
                 });
             } else {
                 pieces.forEach(p => {
@@ -1412,7 +1412,7 @@ window.exportSelectedLocations = async (format) => {
                         "Sala": c.sala,
                         "Nº Pieza": p.inventory_number_new,
                         "Objeto": p.objeto || p.name,
-                        "Material": p.material || "-"
+                        "Materia": p.material || "-"
                     });
                 });
             }
@@ -1464,7 +1464,7 @@ function generatePrintView(locations) {
                                     <th style="width: 70px;">Imagen</th>
                                     <th style="width: 120px;">Nº Inventario</th>
                                     <th>Objeto / Denominación</th>
-                                    <th>Material</th>
+                                    <th>Materia</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1543,7 +1543,7 @@ window.printSelectedPieces = function() {
                         <th style="width: 90px;">Imagen</th>
                         <th style="width: 130px;">Nº Inventario</th>
                         <th>Objeto / Denominación</th>
-                        <th>Material</th>
+                        <th>Materia</th>
                         <th>Ubicación</th>
                     </tr>
                 </thead>

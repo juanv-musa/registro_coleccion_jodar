@@ -81,7 +81,7 @@ function mapToSupabase(data, containerId) {
             objeto: objeto,
             section: getVal(['SECCIÓN']) || null,
             subsection: getVal(['SUBSECCIÓN']) || null,
-            material: getVal(['MATERIA', 'TÉCNICA', 'MATERIAL']) || 'Desconocido',
+            material: getVal(['MATERIA', 'MATERIAL']) || 'Desconocido',
             chronology: getVal(['EPOCA', 'DATACIÓN', 'CRONOLOGÍA']) || 'Desconocida',
             author: getVal(['AUTOR']) || null,
             provenance: getVal(['PROCEDENCIA', 'PROCEDENCIA ']) || null,
