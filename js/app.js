@@ -1387,7 +1387,7 @@ window.exportLocations = async () => {
     }
 };
 
-window.exportSelectedLocations = async (format) => {
+window.exportSelectedLocations = function(format) {
     if (state.selectedLocations.size === 0) return;
     
     const selectedIds = Array.from(state.selectedLocations);
@@ -1425,9 +1425,17 @@ window.exportSelectedLocations = async (format) => {
 
 function generatePrintView(locations) {
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert("El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes para este sitio para poder imprimir.");
+        return;
+    }
+    const baseUrl = window.location.href.replace(/\/[^\/]*$/, '/');
     const html = `
-        <html>
+        <!DOCTYPE html>
+        <html lang="es">
         <head>
+            <meta charset="UTF-8">
+            <base href="${baseUrl}">
             <title>Listado de Ubicaciones y Piezas</title>
             <style>
                 body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
@@ -1488,12 +1496,15 @@ function generatePrintView(locations) {
                 </div>
             `).join('')}
             <script>
-                // Opcional: auto-print
-                // window.onload = () => window.print();
+                // Auto-print delay to ensure images load
+                window.onload = () => {
+                    setTimeout(() => { window.print(); }, 500);
+                };
             </script>
         </body>
         </html>
     `;
+    printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
 }
@@ -1516,9 +1527,17 @@ window.printSelectedPieces = function() {
     const pieces = state.allPieces.filter(p => selectedIds.includes(p.id));
     
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert("El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes para poder imprimir.");
+        return;
+    }
+    const baseUrl = window.location.href.replace(/\/[^\/]*$/, '/');
     const html = `
-        <html>
+        <!DOCTYPE html>
+        <html lang="es">
         <head>
+            <meta charset="UTF-8">
+            <base href="${baseUrl}">
             <title>Listado de Piezas Seleccionadas</title>
             <style>
                 body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; }
@@ -1566,9 +1585,16 @@ window.printSelectedPieces = function() {
                     }).join('')}
                 </tbody>
             </table>
+            <script>
+                // Auto-print delay to ensure images load
+                window.onload = () => {
+                    setTimeout(() => { window.print(); }, 500);
+                };
+            </script>
         </body>
         </html>
     `;
+    printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
 };
