@@ -1445,12 +1445,16 @@ function generatePrintView(locations) {
                 .location-header h2 { margin: 0; font-size: 1.1rem; }
                 .location-header p { margin: 5px 0 0; font-size: 0.8rem; opacity: 0.7; }
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                thead { display: table-header-group; }
+                tr { page-break-inside: avoid; break-inside: avoid; }
                 th, td { border: 1px solid #eee; padding: 6px; text-align: left; vertical-align: middle; }
                 th { background: #fafafa; font-size: 0.75rem; text-transform: uppercase; }
                 .piece-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
                 .no-pieces { font-style: italic; color: #999; padding: 10px; font-size: 0.85rem; }
                 @media print {
                     .no-print { display: none; }
+                    thead { display: table-header-group; }
+                    tr { page-break-inside: avoid; break-inside: avoid; }
                 }
             </style>
         </head>
@@ -1543,11 +1547,15 @@ window.printSelectedPieces = function() {
                 body { font-family: 'Inter', sans-serif; padding: 20px; color: #333; font-size: 0.9rem; }
                 h1 { color: #8b7355; border-bottom: 2px solid #d4af37; padding-bottom: 10px; font-size: 1.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                thead { display: table-header-group; }
+                tr { page-break-inside: avoid; break-inside: avoid; }
                 th, td { border: 1px solid #eee; padding: 8px; text-align: left; vertical-align: middle; }
                 th { background: #fafafa; font-size: 0.75rem; text-transform: uppercase; }
                 .piece-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
                 @media print {
                     .no-print { display: none; }
+                    thead { display: table-header-group; }
+                    tr { page-break-inside: avoid; break-inside: avoid; }
                 }
             </style>
         </head>
