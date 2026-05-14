@@ -301,7 +301,7 @@ function renderInventoryTable(pieces) {
                 <td onclick="window.showPieceDetail('${p.id}')" class="mono">${p.inventory_number_old || '-'}</td>
                 <td onclick="window.showPieceDetail('${p.id}')">${photo}</td>
                 <td onclick="window.showPieceDetail('${p.id}')"><strong>${p.objeto || p.name}</strong></td>
-                <td onclick="window.showPieceDetail('${p.id}')">${p.material || '-'}</td>
+                <td onclick="window.showPieceDetail('${p.id}')">${p.materia || '-'}</td>
                 <td onclick="window.showPieceDetail('${p.id}')"><span class="location-tag">${path}</span></td>
             </tr>
         `;
@@ -328,7 +328,7 @@ function filterInventory() {
             objetoStr, 
             p.inventory_number_new, 
             p.inventory_number_old, 
-            p.material, 
+            p.materia, 
             p.provenance,
             p.chronology
         ].map(v => (v || '').toString().toLowerCase()).join(' ');
@@ -425,7 +425,7 @@ async function showPieceDetail(id) {
         }
         
         document.getElementById('detail-inv-new').innerText = p.inventory_number_new || p.id;
-        document.getElementById('detail-material').innerText = p.material || "-";
+        document.getElementById('detail-materia').innerText = p.materia || "-";
         document.getElementById('detail-chronology').innerText = p.chronology || "-";
         
         document.getElementById('detail-container-name').innerText = c.name || "Sin contenedor";
@@ -925,7 +925,7 @@ window.showEditPieceModal = async function(id) {
         document.getElementById('piece-inv-old').value = p.inventory_number_old || '';
         document.getElementById('piece-objeto').value = p.objeto || '';
         document.getElementById('piece-name').value = p.name || '';
-        document.getElementById('piece-material').value = p.material || '';
+        document.getElementById('piece-materia').value = p.materia || '';
         document.getElementById('piece-chronology').value = p.chronology || '';
         document.getElementById('piece-dimensions').value = p.dimensions || '';
         document.getElementById('piece-provenance').value = p.provenance || '';
@@ -952,7 +952,7 @@ async function handleAddPiece(e) {
         inventory_number_old: document.getElementById('piece-inv-old').value,
         objeto: document.getElementById('piece-objeto').value,
         name: document.getElementById('piece-name').value,
-        material: document.getElementById('piece-material').value,
+        materia: document.getElementById('piece-materia').value,
         chronology: document.getElementById('piece-chronology').value,
         dimensions: document.getElementById('piece-dimensions').value,
         provenance: document.getElementById('piece-provenance').value,
@@ -1344,7 +1344,7 @@ window.exportInventory = () => {
         "Num_Inv_Nuevo": p.inventory_number_new,
         "Num_Inv_Antiguo": p.inventory_number_old,
         "Objeto": p.objeto || p.name,
-        "Materia": p.material,
+        "Materia": p.materia,
         "Cronologia": p.chronology,
         "Ubicacion": p.containers ? p.containers.name : "Sin ubicación",
         "Sala": p.containers ? p.containers.sala : "-"
@@ -1412,7 +1412,7 @@ window.exportSelectedLocations = async (format) => {
                         "Sala": c.sala,
                         "Nº Pieza": p.inventory_number_new,
                         "Objeto": p.objeto || p.name,
-                        "Materia": p.material || "-"
+                        "Materia": p.materia || "-"
                     });
                 });
             }
@@ -1478,7 +1478,7 @@ function generatePrintView(locations) {
                                         <td><img src="${imgSrc}" class="piece-img" onerror="this.src='img/placeholder.jpg'"></td>
                                         <td><strong>${p.inventory_number_new || '-'}</strong></td>
                                         <td>${p.objeto || p.name}</td>
-                                        <td>${p.material || '-'}</td>
+                                        <td>${p.materia || '-'}</td>
                                     </tr>
                                     `;
                                 }).join('')}
@@ -1559,7 +1559,7 @@ window.printSelectedPieces = function() {
                             <td><img src="${imgSrc}" class="piece-img" onerror="this.src='img/placeholder.jpg'"></td>
                             <td><strong>${p.inventory_number_new || p.id}</strong></td>
                             <td>${p.objeto || p.name}</td>
-                            <td>${p.material || '-'}</td>
+                            <td>${p.materia || '-'}</td>
                             <td>${loc}</td>
                         </tr>
                         `;

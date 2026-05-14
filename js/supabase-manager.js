@@ -320,7 +320,7 @@ window.getPiecesBySala = async function(sala) {
     try {
         const { data, error } = await dbClient
             .from('containers')
-            .select('*, pieces(id, objeto, name, inventory_number_new, image_url, material)')
+            .select('*, pieces(id, objeto, name, inventory_number_new, image_url, materia)')
             .eq('sala', sala)
             .order('name');
         if (error) throw error;
